@@ -1,7 +1,7 @@
 import { createStorage } from './storage.mjs';
 import { anchors, anchorText, placement, fitPlacement, overflow } from './layout-core.mjs';
 import { fontAlias } from './font-core.mjs';
-import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
+import { chatInfo, planChat } from './chat-core.mjs';
 import { hotbarInfo, planHotbar, planHotbarEffects } from './hotbar-core.mjs';
 import { scaleSource, captureScaleBase, validateScaleBase } from './ui-core.mjs';
 const storage = await createStorage();
@@ -374,14 +374,19 @@ function layerStates() {
 }
 function updateDirty() {
   const files = new Set([...edits.values()].map((e) => e.file));
-  $('dirty').textContent = files.size ? `Изменено файлов: ${files.size}` : 'Нет изменений';
-  $('dirty').classList.toggle('changed', !!files.size);
+  const game = Object.keys(gameChanges()).map((key) =>
+    key === 'chatFonts' ? 'config.cfg' : 'mbc\\st_map.mbc',
+  );
+  $('dirty').textContent =
+    files.size || game.length ? `Изменено файлов: ${files.size + game.length}` : 'Нет изменений';
+  $('dirty').classList.toggle('changed', !!(files.size || game.length));
   const pending = data && $('client-path').value !== (data.client || '');
-  $('save').disabled = !files.size || pending;
+  $('save').disabled = !(files.size || game.length) || pending;
   $('save').title = `Сохранить в ${data?.client || 'выбранный клиент'}`;
   $('undo').disabled = !undo.length;
   $('redo').disabled = !redo.length;
-  $('files-note').textContent = files.size ? `Изменены: ${[...files].join(', ')}` : '';
+  $('files-note').textContent =
+    files.size || game.length ? `Изменены: ${[...files, ...game].join(', ')}` : '';
 }
 function state(frameView = false) {
   return {
@@ -491,6 +496,46 @@ function rememberScaleBase(w, source) {
     )
   )
     editScaleBase(w.node, captureScaleBase(source), w.file);
+}
+// Width of a node now versus its original (scale base) width.
+function windowScale(w, node = w.node) {
+  const field = get(node, 'size');
+  if (!field) return 1;
+  const base = walk(originalScaleSource(w))
+      .flatMap((n) => n.props)
+      .find((p) => p.start === field.start)?.value,
+    width = (text) => Number(String(text).trim().split(/\s+/)[0]);
+  return base && width(base) ? width(val(node, 'size', '', w.file)) / width(base) : 1;
+}
+// Game files that follow the windows: the chat font in config.cfg (_main.mbc ignores the .ui
+// font of chat_st2) and marker positions in mbc\st_map.mbc. Only differences are returned.
+function gameChanges() {
+  const game = {};
+  const chat = windows.find((w) => w.name === 'chat_st2');
+  if (chat && data?.chatFonts) {
+    const scale = Math.round(windowScale(chat) * 100) / 100;
+    const target = (id) => {
+      const alias = data.fonts.find((f) => f.id === id)?.asset?.match(/^studio_f(\d+)_\d+$/);
+      const source = alias ? Number(alias[1]) : id;
+      return scale === 1 ? source : scaledFont(source, scale);
+    };
+    try {
+      const fonts = { list: target(data.chatFonts.list), edit: target(data.chatFonts.edit) };
+      if (fonts.list !== data.chatFonts.list || fonts.edit !== data.chatFonts.edit)
+        game.chatFonts = fonts;
+    } catch {}
+  }
+  if (data?.mapScales) {
+    const scales = {};
+    for (const name of Object.keys(data.mapScales)) {
+      const w = windows.find((x) => x.name === name);
+      // The map picture is control 1; its width is the scale the markers need.
+      scales[name] = w ? Math.round(windowScale(w, w.controls[0] || w.node) * 1000) / 1000 : 1;
+    }
+    if (Object.keys(scales).some((k) => Math.abs(scales[k] - data.mapScales[k]) > 0.002))
+      game.mapScales = scales;
+  }
+  return game;
 }
 function editCoords(node, text, file = active.file) {
   const index = Number(text.split(/\s+/)[0]),
@@ -731,28 +776,69 @@ function inspector() {
   if (!multi) {
     const chat = chatInfo(active.node, readLayout, data.fonts);
     if (chat) {
-      const controls = group('Настройки чата', 'Текст без увеличения'),
-        apply = guarded((rows, history) => {
+      const controls = group('Настройки чата', 'Масштаб и строки'),
+        maxHeight = () => {
           const rootPosition = nums(active.node, 'position'),
-            anchor = anchors(val(active.node, 'alignWin')),
-            maxHeight = $('safe-screen').checked
-              ? gameSize()[1] -
+            anchor = anchors(val(active.node, 'alignWin'));
+          return $('safe-screen').checked
+            ? gameSize()[1] -
                 (anchor[1] === 1
                   ? Math.max(0, -rootPosition[1])
                   : anchor[1] === 0
                     ? Math.max(0, rootPosition[1])
                     : Math.abs(rootPosition[1]) * 2)
-              : 16384,
-            plan = planChat(active.node, { rows, history, maxHeight }, readLayout, data.fonts);
-          snapshot();
-          batchEdit(() => {
-            for (const p of plan.edits) edit(p.node, p.key, p.value, active.file, p.occurrence);
-            constrainWindow(active);
-          });
+            : 16384;
+        },
+        resize = (rows, history) => {
+          const plan = planChat(
+            active.node,
+            { rows, history, maxHeight: maxHeight() },
+            readLayout,
+            data.fonts,
+          );
+          for (const p of plan.edits) edit(p.node, p.key, p.value, active.file, p.occurrence);
+        },
+        finish = () => {
           layers();
           inspector();
           fit();
+        },
+        // Extra rows grow the window upwards by whole rows; the font stays as it is.
+        apply = guarded((rows, history) => {
+          snapshot();
+          batchEdit(() => {
+            resize(rows, history);
+            constrainWindow(active);
+          });
+          finish();
+        }),
+        // The scale starts from the original window, so frame, rows and font grow together;
+        // the chosen number of rows is kept on top of it.
+        scaleTo = guarded((percent) => {
+          if (!(percent >= 50 && percent <= 300)) throw Error('Масштаб окна: от 50% до 300%');
+          const rows = chat.rows,
+            history = chat.history;
+          snapshot();
+          batchEdit(() => {
+            scaleWindow(active, percent / 100);
+            if (chatInfo(active.node, readLayout, data.fonts).rows !== rows) resize(rows, history);
+            constrainWindow(active);
+          });
+          finish();
         });
+      const scaleField = el('label', '', 'Масштаб окна, %'),
+        scaleInput = el('input');
+      scaleInput.id = 'chat-scale';
+      scaleInput.type = 'number';
+      scaleInput.min = 50;
+      scaleInput.max = 300;
+      scaleInput.step = 5;
+      scaleInput.value = Math.round(windowScale(active) * 100);
+      scaleInput.disabled = disabled;
+      scaleInput.setAttribute('aria-label', 'Масштаб окна, %');
+      scaleInput.onchange = () => scaleTo(scaleInput.valueAsNumber);
+      scaleField.append(scaleInput);
+      controls.append(scaleField);
       for (const [label, id, initial, min, max] of [
         ['Видимых строк', 'chat-rows', chat.rows, 2, 80],
         ['История сообщений', 'chat-history', chat.history, 2, 10000],
@@ -770,33 +856,12 @@ function inspector() {
         field.append(input);
         controls.append(field);
       }
-      const pitch = el('label', '', 'Высота строки, px'),
-        pitchInput = el('input');
-      pitchInput.id = 'chat-row-height';
-      pitchInput.type = 'number';
-      pitchInput.min = 8;
-      pitchInput.max = 64;
-      pitchInput.value = chat.rowHeight;
-      pitchInput.disabled = disabled;
-      pitchInput.setAttribute('aria-label', 'Высота строки, px');
-      pitchInput.onchange = guarded(() => {
-        const plan = planChatRowHeight(
-          active.node,
-          pitchInput.valueAsNumber,
-          readLayout,
-          data.fonts,
-        );
-        if (!plan.edits.length) return;
-        snapshot();
-        batchEdit(() => {
-          for (const p of plan.edits) edit(p.node, p.key, p.value, active.file, p.occurrence);
-        });
-        layers();
-        inspector();
-        paint();
-      });
-      pitch.append(pitchInput);
-      controls.append(pitch);
+      for (const percent of [100, 125, 150, 175, 200]) {
+        const button = el('button', '', `${percent}%`);
+        button.disabled = disabled;
+        button.onclick = () => scaleTo(percent);
+        controls.append(button);
+      }
       for (const rows of [6, 12, 20]) {
         const button = el('button', '', `${rows} строк`);
         button.disabled = disabled;
@@ -806,12 +871,12 @@ function inspector() {
       const description = el(
         'div',
         'field-description wide',
-        `Одна строка: ${chat.rowHeight} px. Меньшая высота строки вмещает больше сообщений в то же окно; не делайте её ниже высоты шрифта. На холсте показаны примеры. Длинное сообщение может занимать несколько строк.${chat.name === 'chat' ? ' Для просмотра истории с прокруткой откройте полный чат.' : ''}`,
+        `Строка: ${chat.rowHeight} px. Новые строки наращивают окно вверх и не меняют шрифт. Масштаб увеличивает рамку, строки и шрифт вместе. Длинное сообщение может занимать несколько строк.${chat.name === 'chat' ? ' Для просмотра истории с прокруткой откройте полный чат.' : ''}`,
       );
       controls.append(description);
       if (chat.name === 'chat_st2')
         note(
-          'Игровой сценарий читает шрифт чата из CHAT_LIST_FONT в config.cfg. Настройка числа строк сохраняет этот шрифт.',
+          'Шрифт сообщений и строки ввода игра берёт из CHAT_LIST_FONT и CHAT_EDIT_FONT в config.cfg. При сохранении редактор подберёт их под масштаб окна.',
         );
     }
     const hotbar = hotbarInfo(active.node, readLayout);
@@ -2501,20 +2566,25 @@ $('save').onclick = guarded(async () => {
   }));
   $('save').disabled = true;
   try {
+    const game = gameChanges();
     const used = new Set(
-      files.flatMap((f) => {
-        const original = data.files.find((file) => file.name === f.name),
-          fonts = new Set(
-            walk(original.tree)
-              .flatMap((n) => n.props)
-              .filter((p) => p.key.toLowerCase() === 'font')
-              .map((p) => p.start),
-          );
-        return f.edits
-          .filter((e) => fonts.has(e.start) && fontPlans.some((p) => p.id === Number(e.value)))
-          .map((e) => Number(e.value));
-      }),
+      [game.chatFonts?.list, game.chatFonts?.edit].filter((id) =>
+        fontPlans.some((p) => p.id === id),
+      ),
     );
+    for (const id of files.flatMap((f) => {
+      const original = data.files.find((file) => file.name === f.name),
+        fonts = new Set(
+          walk(original.tree)
+            .flatMap((n) => n.props)
+            .filter((p) => p.key.toLowerCase() === 'font')
+            .map((p) => p.start),
+        );
+      return f.edits
+        .filter((e) => fonts.has(e.start) && fontPlans.some((p) => p.id === Number(e.value)))
+        .map((e) => Number(e.value));
+    }))
+      used.add(id);
     const plans = fontPlans.filter((p) => used.has(p.id));
     const base = Math.max(1, ...data.fonts.map((f) => f.id));
     const remap = new Map(plans.map((p, i) => [p.id, base + i + 1]));
@@ -2527,17 +2597,23 @@ $('save').onclick = guarded(async () => {
         if (field?.key.toLowerCase() === 'font' && remap.has(Number(patch.value)))
           patch.value = String(remap.get(Number(patch.value)));
       }
+    if (game.chatFonts)
+      for (const key of ['list', 'edit'])
+        game.chatFonts[key] = remap.get(game.chatFonts[key]) ?? game.chatFonts[key];
     const result = await api('/api/save', {
         files,
         client: data.client,
         fontScales: plans.map((p) => ({ ...p, id: remap.get(p.id) })),
         fontsHash: data.fontsHash,
+        game,
       }),
       name = active.name,
       ids = selection.map((n) => n.id);
     for (const f of result.files) data.files[data.files.findIndex((x) => x.name === f.name)] = f;
     if (result.fonts) data.fonts = result.fonts;
     if (result.fontsHash) data.fontsHash = result.fontsHash;
+    if (result.chatFonts) data.chatFonts = result.chatFonts;
+    if ('mapScales' in result) data.mapScales = result.mapScales;
     fontPlans = [];
     edits.clear();
     undo = [];
@@ -2548,8 +2624,9 @@ $('save').onclick = guarded(async () => {
     toast(
       result.downloadOnly
         ? 'Скачан ZIP с изменениями и бэкапами. Распакуйте его в папку клиента.'
-        : `Сохранено файлов: ${result.files.length}. Резервная копия создана. Перезапустите игру`,
+        : `Сохранено файлов: ${result.files.length + Object.keys(game).length}. Резервная копия создана. Перезапустите игру`,
     );
+    if (result.warnings?.length) toast(result.warnings.join('. '), true);
   } finally {
     updateDirty();
   }

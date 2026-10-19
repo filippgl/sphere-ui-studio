@@ -8,7 +8,14 @@ import {
   resolution,
 } from './layout-core.mjs';
 import { scaleSfn, readSfn } from './font-core.mjs';
-import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
+import { chatInfo, planChat } from './chat-core.mjs';
+import {
+  chatFonts,
+  setChatFonts,
+  originalMapScript,
+  patchMapScript,
+  mapScriptScales,
+} from './game-core.mjs';
 import { planHotbar, planHotbarEffects, hotbarInfo } from './hotbar-core.mjs';
 import { captureScaleBase, scaleSource } from './ui-core.mjs';
 import assert from 'node:assert/strict';
@@ -257,17 +264,6 @@ function layoutEdits(plan) {
     return { start: field.start, end: field.end, value: p.value };
   });
 }
-test('Плотные строки чата добавляют сообщения без изменения окна', () => {
-  const root = parse(chatFixture).children[0],
-    plan = planChatRowHeight(root, 10),
-    result = parse(applyEdits(chatFixture, layoutEdits(plan.edits))).children[0];
-  assert.equal(plan.edits.length, 1);
-  assert.equal(chatInfo(result).rows, 8);
-  assert.equal(prop(result, 'size').value, '583 146');
-  assert.equal(prop(chatInfo(result).list, 'size').value, '530 87');
-  assert.deepEqual(planChatRowHeight(root, 14).edits, []);
-  assert.throws(() => planChatRowHeight(root, 4), /8–64/);
-});
 test('Чат добавляет строки и историю, перемещая ввод и прокрутку без изменения шрифтов и номеров', () => {
   const root = parse(chatFixture).children[0],
     plan = planChat(root, { rows: 20, history: 1000 }),
@@ -564,4 +560,31 @@ test('Ранее повреждённая масштабом рамка восс
     ).value,
     '5 30',
   );
+});
+
+test('Шрифты чата в config.cfg меняются на месте, а скрипт карты обратимо собирается по рецепту', async () => {
+  const cfg = 'XRES\t1920\r\nCHAT_LIST_FONT\t4\r\n';
+  assert.deepEqual(chatFonts(cfg), { list: 4, edit: 4 });
+  assert.equal(chatFonts('CHAT_LIST_FONT 1').list, 4);
+  const changed = setChatFonts(cfg, { list: 16, edit: 17 });
+  assert.match(changed, /^CHAT_LIST_FONT\t16\r$/m);
+  assert.match(changed, /^CHAT_EDIT_FONT\t17\r$/m);
+  assert.throws(() => setChatFonts(cfg, { list: 99, edit: 4 }), /шрифт/);
+  // A synthetic script: the recipe copies [0, 5), replaces "ab" with code holding two params.
+  const source = encode('head-ab-tail'),
+    hex = (bytes) => [...bytes].map((b) => b.toString(16).padStart(2, '0')).join(''),
+    recipe = {
+      script: 'st_map.mbc',
+      sourceSha256: hex(new Uint8Array(await crypto.subtle.digest('SHA-256', source))),
+      resultSize: 5 + 8 + 5,
+      params: { minimap: 5, bigmap: 9 },
+      ops: [[0, 5], { from: hex(encode('ab')), to: '0000000000000000' }, [7, 5]],
+    };
+  assert.equal(await patchMapScript(source, { minimap: 1, bigmap: 1 }, recipe), source);
+  const patched = await patchMapScript(source, { minimap: 1.75, bigmap: 1.5 }, recipe);
+  assert.equal(patched.length, recipe.resultSize);
+  assert.deepEqual(await mapScriptScales(patched, recipe), { minimap: 1.75, bigmap: 1.5 });
+  assert.deepEqual([...(await originalMapScript(patched, recipe))], [...source]);
+  assert.deepEqual(await mapScriptScales(source, recipe), { minimap: 1, bigmap: 1 });
+  assert.equal(await mapScriptScales(encode('другой скрипт'), recipe), null);
 });

@@ -105,7 +105,8 @@ export async function prepareFonts(requests, cfgBytes, read, list) {
 
 export function validAsset(item) {
   return (
-    (item.scope === 'root' && item.name === 'fonts.cfg') ||
+    (item.scope === 'root' && ['fonts.cfg', 'config.cfg'].includes(item.name)) ||
+    (item.scope === 'mbc' && item.name === 'st_map.mbc') ||
     (['effects', 'xadd'].includes(item.scope) &&
       /^studio_f\d+_\d+(?:_(?:d|f|i|p|spa))?\.(?:sfn|dds)$/i.test(item.name) &&
       item.name.toLowerCase().endsWith(item.scope === 'effects' ? '.sfn' : '.dds'))

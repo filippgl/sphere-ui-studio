@@ -9,6 +9,12 @@ import { decode, encode, hash, parse, walk, value, unquote, applyEdits } from '.
 import { rgbaFromDds, png } from './dds.mjs';
 import { resolution } from './layout-core.mjs';
 import { prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
+import {
+  prepareGameAssets,
+  configChatFonts,
+  mapScriptScales,
+  mapScriptName,
+} from './game-core.mjs';
 import { backupId, historyEntries, restorePlan } from './history-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -253,16 +259,12 @@ async function putAsset(item, bytes) {
   await fs.writeFile(target + '.editor-tmp', bytes);
   await fs.rename(target + '.editor-tmp', target);
 }
-async function save(files, fontScales = [], fontsHash) {
+async function save(files, fontScales = [], fontsHash, game = {}) {
   if (!client) throw Error('Сначала выберите папку игры');
   if (mutation) throw Error('Дождитесь предыдущего сохранения');
   mutation = true;
   try {
-    if (
-      !Array.isArray(files) ||
-      files.length === 0 ||
-      new Set(files.map((f) => f.name)).size !== files.length
-    )
+    if (!Array.isArray(files) || new Set(files.map((f) => f.name)).size !== files.length)
       throw Error('Нет изменений');
     const changes = [];
     const cfg = await optionalRead(path.join(client, 'fonts.cfg'));
@@ -293,13 +295,23 @@ async function save(files, fontScales = [], fontsHash) {
       const after = encode(applyEdits(decode(before), f.edits));
       changes.push({ name: f.name, before, after });
     }
-    for (const asset of generated.assets) {
+    const extra = await prepareGameAssets(
+      game,
+      (scope, name) => optionalRead(assetPath({ scope, name })),
+      generated.definitions,
+    );
+    for (const asset of [...generated.assets, ...extra.assets]) {
       const before = await optionalRead(assetPath(asset));
-      if (asset.scope !== 'root' && before !== null && digest(before) !== digest(asset.after))
+      if (
+        ['effects', 'xadd'].includes(asset.scope) &&
+        before !== null &&
+        digest(before) !== digest(asset.after)
+      )
         throw Error(`Файл ${asset.name} уже существует с другим содержимым`);
       changes.push({ ...asset, before });
     }
     // Fonts must exist before any UI file starts referring to their IDs.
+    if (!changes.length) throw Error('Нет изменений');
     changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
     const id = backupId(await backups(), randomUUID());
     const dir = path.join(backupRoot, id);
@@ -349,6 +361,9 @@ async function save(files, fontScales = [], fontsHash) {
       files: await Promise.all(changes.filter((c) => !c.scope).map((c) => getFile(c.name))),
       fonts,
       fontsHash: digest(await optionalRead(path.join(client, 'fonts.cfg'))),
+      chatFonts: configChatFonts(await optionalRead(path.join(client, 'config.cfg'))),
+      mapScales: await mapScriptScales(await optionalRead(path.join(client, 'mbc', mapScriptName))),
+      warnings: extra.warnings,
     };
   } finally {
     mutation = false;
@@ -490,7 +505,7 @@ const server = http.createServer(async (req, res) => {
       if (data.client && data.client !== client)
         throw Error('Выбрана другая папка игры. Перечитайте страницу перед сохранением');
       if (url.pathname === '/api/save')
-        return send(res, 200, await save(data.files, data.fontScales, data.fontsHash));
+        return send(res, 200, await save(data.files, data.fontScales, data.fontsHash, data.game));
       if (url.pathname === '/api/restore') return send(res, 200, await restore(data.id));
       return send(res, 404, { error: 'Неизвестная команда' });
     }
@@ -509,6 +524,10 @@ const server = http.createServer(async (req, res) => {
         fonts,
         fontsHash: digest(cfg),
         resolution: config ? resolution(decode(config)) : null,
+        chatFonts: configChatFonts(config),
+        mapScales: client
+          ? await mapScriptScales(await optionalRead(path.join(client, 'mbc', mapScriptName)))
+          : null,
         backups: await backups(),
         webOrigins: settings.webOrigins || [],
       });

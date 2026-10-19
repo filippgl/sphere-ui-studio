@@ -5,6 +5,12 @@ import { zip, download } from './zip.mjs';
 import { resolution } from './layout-core.mjs';
 import { fontDefinitions, prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
 import { backupId, historyEntries, restorePlan } from './history-core.mjs';
+import {
+  prepareGameAssets,
+  configChatFonts,
+  mapScriptScales,
+  mapScriptName,
+} from './game-core.mjs';
 
 export async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
@@ -209,6 +215,8 @@ export class BrowserStorage {
       resolution: resolution(
         decode((await this.viewRead({ scope: 'root', name: 'config.cfg' })) || new Uint8Array()),
       ),
+      chatFonts: configChatFonts(await this.viewRead({ scope: 'root', name: 'config.cfg' })),
+      mapScales: await mapScriptScales(await this.viewRead({ scope: 'mbc', name: mapScriptName })),
       restricted: [...this.restricted],
       backups: await this.backups(),
       storageMode: current.downloadOnly ? 'download' : 'browser',
@@ -304,15 +312,11 @@ export class BrowserStorage {
         } catch {}
       }
   }
-  async save(files, fontScales = [], fontsHash) {
+  async save(files, fontScales = [], fontsHash, game = {}) {
     const current = this.current;
     const result = await this.exclusive(async () => {
       if (current !== this.current) throw Error('Выбрана другая папка');
-      if (
-        !Array.isArray(files) ||
-        !files.length ||
-        new Set(files.map((f) => f.name)).size !== files.length
-      )
+      if (!Array.isArray(files) || new Set(files.map((f) => f.name)).size !== files.length)
         throw Error('Нет изменений или файлы повторяются');
       const changes = [];
       const cfg = fontScales.length
@@ -357,14 +361,24 @@ export class BrowserStorage {
           afterHash: await sha256(after),
         });
       }
-      for (const asset of generated.assets) {
+      const extra = await prepareGameAssets(
+        game,
+        (scope, name) => this.optionalRead({ scope, name }),
+        generated.definitions,
+      );
+      for (const asset of [...generated.assets, ...extra.assets]) {
         const before = await this.optionalRead(asset),
           beforeHash = await this.digest(before),
           afterHash = await this.digest(asset.after);
-        if (asset.scope !== 'root' && before !== null && beforeHash !== afterHash)
+        if (
+          ['effects', 'xadd'].includes(asset.scope) &&
+          before !== null &&
+          beforeHash !== afterHash
+        )
           throw Error(`Файл ${asset.name} уже существует с другим содержимым`);
         changes.push({ ...asset, before, beforeHash, afterHash });
       }
+      if (!changes.length) throw Error('Нет изменений');
       changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
       const id = backupId(await this.backups(), crypto.randomUUID());
       const backupRoot = await child(current.handle, backupName, 'directory', true),
@@ -423,6 +437,11 @@ export class BrowserStorage {
         files: await Promise.all(changes.filter((c) => !c.scope).map((c) => this.getFile(c.name))),
         fonts: this.fonts,
         fontsHash: await this.digest(await this.viewRead({ scope: 'root', name: 'fonts.cfg' })),
+        chatFonts: configChatFonts(await this.viewRead({ scope: 'root', name: 'config.cfg' })),
+        mapScales: await mapScriptScales(
+          await this.viewRead({ scope: 'mbc', name: mapScriptName }),
+        ),
+        warnings: extra.warnings,
         downloadOnly: current.downloadOnly,
       };
     });
@@ -643,7 +662,7 @@ export class BrowserStorage {
         );
       }
       case '/api/save':
-        return this.save(body.files, body.fontScales, body.fontsHash);
+        return this.save(body.files, body.fontScales, body.fontsHash, body.game);
       case '/api/restore':
         return this.restore(body.id);
       default:
