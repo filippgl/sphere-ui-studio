@@ -3,3 +3,5 @@ test-*.png
 *.log
 catalog.json
 node_modules/
+dist/
+*.tar.gz

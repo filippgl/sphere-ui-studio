@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#202124" />
     <title>Sphere Studio · Редактор интерфейса</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <header class="topbar">
@@ -41,7 +41,7 @@
       ><button id="client-open">
         <span id="client-summary">Выберите папку игры</span
         ><span data-icon="chevron-down"></span></button
-      ><span class="local-label">Локальный проект</span
+      ><span class="local-label" id="storage-mode">Локальный проект</span
       ><button
         id="shortcuts-open"
         class="icon-button"
@@ -93,6 +93,15 @@
           <div id="windows"></div>
         </section>
         <footer>
+          <a
+            class="local-download"
+            href="https://github.com/filippgl/sphere-ui-studio"
+            target="_blank"
+            rel="noopener"
+            ><span data-icon="download"></span>Скачать локальную версию<span class="external"
+              >↗</span
+            ></a
+          >
           <button id="import"><span data-icon="upload"></span>Импорт профиля</button
           ><button id="export"><span data-icon="download"></span>Экспорт профиля</button
           ><input id="profile" type="file" accept="application/json,.json" hidden /><button
@@ -352,6 +361,7 @@
       </p>
       <label class="input-label" for="client-path">Папка клиента</label>
       <div class="path-input">
+        <span id="browser-folder-name" hidden>Выберите папку кнопкой справа</span>
         <input
           id="client-path"
           aria-label="Путь к папке игры"
@@ -361,10 +371,15 @@
           <span data-icon="folder"></span>
         </button>
       </div>
+      <p id="storage-description" class="dialog-description" hidden></p>
+      <input id="folder-files" type="file" webkitdirectory multiple hidden />
       <div class="client-buttons">
         <button id="discover-clients"><span data-icon="search"></span>Найти внутри папки</button
         ><button id="connect-client" class="primary">Открыть эту копию</button>
       </div>
+      <button id="import-folder" class="text-button" hidden>
+        Открыть папку для выгрузки изменений в ZIP
+      </button>
       <div class="recent-caption" id="recent-caption">НЕДАВНИЕ И НАЙДЕННЫЕ</div>
       <div id="recent-clients"></div>
       <select id="client-choice" aria-label="Найденные копии игры" hidden></select>
@@ -405,6 +420,6 @@
       <p class="dialog-description">Привычные сочетания для работы с интерфейсом игры.</p>
       <div id="shortcuts-list"></div>
     </dialog>
-    <script type="module" src="/app.mjs"></script>
+    <script type="module" src="./app.mjs"></script>
   </body>
 </html>

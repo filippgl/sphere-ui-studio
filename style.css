@@ -3,6 +3,49 @@
   src: local('Inter'), local('Segoe UI Variable'), local('Segoe UI');
   font-display: swap;
 }
+.local-download {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  text-decoration: none;
+}
+.local-download:hover {
+  background: #ffffff08;
+  color: var(--text);
+}
+.local-download svg {
+  width: 14px;
+  height: 14px;
+  color: var(--dim);
+}
+#browser-folder-name {
+  display: block;
+  min-height: 40px;
+  padding: 10px 40px 10px 12px;
+  background: #1a1b1f;
+  border: 1px solid #484951;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#storage-description {
+  margin: 12px 0;
+  color: #aca6bf;
+  font-size: 10px;
+}
+#import-folder {
+  font-size: 10px;
+  margin-top: -12px;
+  padding-left: 0;
+}
 :root {
   color-scheme: dark;
   --bg: #17181b;

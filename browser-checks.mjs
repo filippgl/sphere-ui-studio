@@ -328,6 +328,10 @@ export async function browserChecks({
     'Окно перемещается за заголовок рамки',
   );
   await page.locator('#undo').click();
+  await page.waitForFunction(
+    (x) => Math.abs(document.getElementById('frame-label').getBoundingClientRect().left - x) < 2,
+    labelBefore.x,
+  );
   const labelAfterUndo = await page.locator('#frame-label').boundingBox();
   check(
     Math.abs(labelAfterUndo.x - labelBefore.x) < 2,
@@ -385,6 +389,10 @@ export async function browserChecks({
   await page.locator('#client-open').click();
   await field('Путь к папке игры').fill(path.join(fixture, 'not-opened'));
   await page.locator('#client-dialog [data-close]').click();
+  await page.waitForFunction(
+    () =>
+      !document.getElementById('client-dialog').open && !document.getElementById('save').disabled,
+  );
   check(
     await page.locator('#save').isEnabled(),
     'Отмена выбора другой папки не блокирует сохранение текущей',

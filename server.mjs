@@ -175,10 +175,21 @@ async function body(req) {
 async function backups() {
   if (!client) return [];
   try {
-    return (await fs.readdir(backupRoot))
-      .filter((n) => /^\d{4}-/.test(n))
-      .sort()
-      .reverse();
+    const ids = [];
+    for (const name of await fs.readdir(backupRoot))
+      if (/^\d{4}-/.test(name)) {
+        try {
+          await fs.access(path.join(backupRoot, name, 'manifest.json'));
+          let state;
+          try {
+            state = JSON.parse(
+              await fs.readFile(path.join(backupRoot, name, 'transaction.json'), 'utf8'),
+            ).state;
+          } catch {}
+          if (!state || state === 'committed') ids.push(name);
+        } catch {}
+      }
+    return ids.sort().reverse();
   } catch {
     return [];
   }
@@ -299,7 +310,7 @@ const send = (res, status, data, type = 'application/json; charset=utf-8') => {
     'X-Content-Type-Options': 'nosniff',
     'Cache-Control': 'no-store',
     'Content-Security-Policy':
-      "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'",
+      "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'",
   });
   res.end(type.startsWith('application/json') ? JSON.stringify(data) : data);
 };
@@ -341,6 +352,13 @@ const server = http.createServer(async (req, res) => {
       '/app.mjs': ['app.mjs', 'text/javascript'],
       '/style.css': ['style.css', 'text/css'],
       '/ui-model.mjs': ['ui-model.mjs', 'text/javascript'],
+      '/storage.mjs': ['storage.mjs', 'text/javascript'],
+      '/runtime.mjs': ['runtime.mjs', 'text/javascript'],
+      '/browser-storage.mjs': ['browser-storage.mjs', 'text/javascript'],
+      '/browser-files.mjs': ['browser-files.mjs', 'text/javascript'],
+      '/zip.mjs': ['zip.mjs', 'text/javascript'],
+      '/ui-core.mjs': ['ui-core.mjs', 'text/javascript'],
+      '/dds-core.mjs': ['dds-core.mjs', 'text/javascript'],
     };
     if (staticFiles[url.pathname]) {
       const [name, type] = staticFiles[url.pathname];

@@ -1,3 +1,5 @@
+import { createStorage } from './storage.mjs';
+const storage = await createStorage();
 const $ = (id) => document.getElementById(id);
 const walk = (n) => [n, ...n.children.flatMap(walk)];
 const get = (n, key, occurrence = 0) =>
@@ -179,21 +181,7 @@ function toast(text, error = false) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => $('toast').classList.remove('show'), 4200);
 }
-async function api(url, body) {
-  const r = await fetch(
-    url,
-    body
-      ? {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }
-      : {},
-  );
-  const json = await r.json();
-  if (!r.ok) throw Error(json.error);
-  return json;
-}
+const api = (url, body) => storage.call(url, body);
 const guarded =
   (fn) =>
   async (...args) => {
@@ -749,7 +737,15 @@ function image(name) {
     im.failed = true;
     paint();
   };
-  im.src = '/api/texture?name=' + encodeURIComponent(name);
+  storage
+    .texture(name)
+    .then((url) => {
+      im.src = url;
+    })
+    .catch(() => {
+      im.failed = true;
+      paint();
+    });
   return im;
 }
 function texturedTriangle(im, source, target) {
@@ -1839,7 +1835,11 @@ $('save').onclick = guarded(async () => {
     rebuild();
     choose(windows.find((w) => w.name === name) || windows[0], false);
     setSelection([active.node, ...active.controls].filter((n) => ids.includes(n.id)));
-    toast(`Сохранено файлов: ${result.files.length}. Резервная копия создана. Перезапустите игру`);
+    toast(
+      result.downloadOnly
+        ? 'Скачан ZIP с изменениями и бэкапами. Распакуйте его в папку клиента.'
+        : `Сохранено файлов: ${result.files.length}. Резервная копия создана. Перезапустите игру`,
+    );
   } finally {
     updateDirty();
   }
@@ -1859,13 +1859,17 @@ $('history').onclick = guarded(async () => {
     const b = el('button', '', 'Восстановить');
     b.onclick = guarded(async () => {
       if (edits.size && !confirm('Откатить файлы и убрать несохранённые изменения?')) return;
-      await api('/api/restore', { id, client: data.client });
+      const restored = await api('/api/restore', { id, client: data.client });
       edits.clear();
       undo = [];
       redo = [];
       await load(active?.name);
       $('backup-dialog').close();
-      toast('Исходные файлы восстановлены');
+      toast(
+        restored.downloadOnly
+          ? 'Скачан ZIP для восстановления файлов. Распакуйте его в папку клиента.'
+          : 'Исходные файлы восстановлены',
+      );
     });
     row.append(text, b);
     $('backup-list').append(row);
@@ -1959,25 +1963,33 @@ $('profile').onchange = guarded(async (e) => {
   toast(`Профиль загружен: ${batch.length} полей. Сохраните, чтобы применить`);
   e.target.value = '';
 });
-$('research').onclick = () => window.open('/api/research', '_blank', 'noopener');
+$('research').onclick = () => window.open(storage.research, '_blank', 'noopener');
 async function recentClients(extra = []) {
-  const roots = [...new Set([...extra, ...(await api('/api/clients'))])];
+  const roots = [
+    ...new Map(
+      [...extra, ...(await api('/api/clients'))].map((root) => {
+        const item =
+          typeof root === 'string'
+            ? { id: root, name: root.split(/[\\/]/).filter(Boolean).at(-1), display: root }
+            : root;
+        return [item.id, item];
+      }),
+    ).values(),
+  ];
   $('client-choice').replaceChildren(new Option('Недавние копии', ''));
   $('recent-clients').replaceChildren();
   $('recent-caption').hidden = !roots.length;
   for (const root of roots) {
-    $('client-choice').append(new Option(root, root));
+    $('client-choice').append(new Option(root.display, root.id));
     const b = el('button', 'recent-client');
     b.append(icon('folder'));
     const text = el('span');
-    text.append(
-      el('strong', '', root.split(/[\\/]/).filter(Boolean).at(-1)),
-      el('small', '', root),
-    );
+    text.append(el('strong', '', root.name), el('small', '', root.display));
     b.append(text);
-    if (root === data?.client) b.append(el('small', 'current-badge', 'ОТКРЫТА'));
+    if (root.id === data?.client) b.append(el('small', 'current-badge', 'ОТКРЫТА'));
     b.onclick = () => {
-      $('client-path').value = root;
+      $('client-path').value = root.id;
+      $('browser-folder-name').textContent = root.name;
       $('connect-client').click();
     };
     $('recent-clients').append(b);
@@ -1992,11 +2004,19 @@ async function openClient() {
 for (const id of ['client-open', 'welcome-open', 'menu-client'])
   $(id).onclick = guarded(openClient);
 $('browse-client').onclick = guarded(async () => {
+  if (storage.mode === 'browser' && !globalThis.showDirectoryPicker) {
+    $('folder-files').click();
+    return;
+  }
   const b = $('browse-client');
   b.disabled = true;
   try {
     const result = await api('/api/pick-folder', {});
-    if (result.path) $('client-path').value = result.path;
+    if (result.path) {
+      $('client-path').value = result.path;
+      $('browser-folder-name').textContent = result.name || result.path;
+      updateDirty();
+    }
   } finally {
     b.disabled = false;
   }
@@ -2025,9 +2045,34 @@ $('connect-client').onclick = guarded(async () => {
   views.clear();
   await load();
   $('client-dialog').close();
-  toast('Открыта копия: ' + data.client);
+  toast('Открыта копия: ' + (data.clientLabel || data.client));
 });
 $('client-path').oninput = updateDirty;
+if (storage.mode === 'browser') {
+  $('client-path').hidden = true;
+  $('browser-folder-name').hidden = false;
+  $('storage-description').hidden = false;
+  $('storage-description').textContent = globalThis.showDirectoryPicker
+    ? 'Выберите папку и разрешите запись. Сохранение и резервные копии выполняются на вашем компьютере. Игровые файлы не отправляются на сайт.'
+    : 'Этот браузер открывает папку для редактирования с выгрузкой изменений и бэкапов в ZIP. Для прямой записи используйте Chrome, Edge или локальную версию.';
+  $('import-folder').hidden = !globalThis.showDirectoryPicker;
+}
+$('import-folder').onclick = () => $('folder-files').click();
+$('folder-files').onchange = guarded(async (event) => {
+  if (!event.target.files.length) return;
+  if (edits.size && !confirm('Открыть другую папку и убрать несохранённые изменения?')) return;
+  await storage.importFiles([...event.target.files]);
+  edits.clear();
+  undo = [];
+  redo = [];
+  visibility.clear();
+  locked.clear();
+  views.clear();
+  await load();
+  $('client-dialog').close();
+  toast('Папка открыта. Изменения будут скачиваться в ZIP, файлы на диске пока не меняются.');
+  event.target.value = '';
+});
 $('client-dialog').addEventListener('close', () => {
   $('client-path').value = data?.client || '';
   updateDirty();
@@ -2290,8 +2335,18 @@ async function load(preferred = 'pick_person') {
   data = await api('/api/catalog');
   $('client').textContent = 'Клиент';
   $('client-path').value = data.client || '';
-  $('client-summary').textContent = data.client || 'Выберите папку игры';
-  $('client-summary').title = data.client || '';
+  $('client-summary').textContent = data.clientLabel || data.client || 'Выберите папку игры';
+  $('client-summary').title = data.clientLabel || data.client || '';
+  if (storage.mode === 'browser')
+    $('browser-folder-name').textContent = data.clientLabel || 'Выберите папку кнопкой справа';
+  $('save').querySelector('span:last-child').textContent =
+    data.storageMode === 'download' ? 'Скачать изменения' : 'Сохранить в клиент';
+  $('storage-mode').textContent =
+    storage.mode === 'browser'
+      ? data.storageMode === 'download'
+        ? 'Онлайн · выгрузка в ZIP'
+        : 'Онлайн · файлы у вас'
+      : 'Локальный проект';
   images.clear();
   rebuild();
   if (windows.length) choose(windows.find((w) => w.name === preferred) || windows[0], false);
