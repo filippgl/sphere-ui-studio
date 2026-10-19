@@ -46,7 +46,9 @@ export function parse(text) {
       pending = null;
     } else if (code === '}') {
       if (stack.length === 1) throw Error('Лишняя закрывающая скобка');
-      stack.pop().end = offset + raw.length;
+      const node = stack.pop();
+      node.closeStart = offset;
+      node.end = offset + raw.length;
       pending = null;
     } else if (code) {
       const match = code.match(/^(\w+)\s+(\S.*)$/);
@@ -70,6 +72,10 @@ export const prop = (node, key) =>
   node.props.find((p) => p.key.toLowerCase() === key.toLowerCase());
 export const value = (node, key, fallback = '') => prop(node, key)?.value ?? fallback;
 export const unquote = (text) => text.replace(/^"|"$/g, '');
+export function insertionPoint(text, node) {
+  const end = node.end - (text[node.end - 1] === '\n' ? 1 : 0);
+  return text.lastIndexOf('\n', end - 1) + 1;
+}
 
 export const editable = new Set(
   [
@@ -102,6 +108,7 @@ export const editable = new Set(
     'titletextmargin',
     'selectionborder',
     'rowheight',
+    'maxitems',
     'scrollspr',
   ].map((x) => x.toLowerCase()),
 );
@@ -112,12 +119,66 @@ export function applyEdits(text, edits) {
       .map((p) => [`${p.start}:${p.end}`, p]),
   );
   const seen = new Set();
+  const insertions = new Map();
   for (const edit of edits) {
+    if (edit.insert) {
+      const node = walk(parse(text)).find((n) => n.id === edit.node),
+        nums = typeof edit.value === 'string' ? edit.value.trim().split(/\s+/).map(Number) : [];
+      if (edit.insert === 'alignWin') {
+        const key = `${edit.node}:alignWin`;
+        if (
+          node?.kind !== 'windowUI' ||
+          edit.start !== edit.end ||
+          edit.start !== insertionPoint(text, node) ||
+          typeof edit.value !== 'string' ||
+          !/^(LEFT_X|CENTER_X|RIGHT_X)\s*\|\s*(LEFT_Y|CENTER_Y|RIGHT_Y)$/.test(edit.value) ||
+          node.props.some((p) => p.key.toLowerCase() === 'alignwin') ||
+          seen.has(key)
+        )
+          throw Error('Недопустимая вставка привязки окна');
+        seen.add(key);
+        insertions.set(edit, `    alignWin ${edit.value}${text.includes('\r\n') ? '\r\n' : '\n'}`);
+        continue;
+      }
+      const index = nums[0],
+        key = `${edit.node}:tcoords:${index}`;
+      if (
+        edit.insert !== 'tcoords' ||
+        node?.kind !== 'sprite' ||
+        edit.start !== edit.end ||
+        edit.start !== insertionPoint(text, node) ||
+        nums.length !== 9 ||
+        nums.some((n) => !Number.isInteger(n) || Math.abs(n) > 32768) ||
+        index < 0 ||
+        index >= node.props.filter((p) => p.key.toLowerCase() === 'texture').length ||
+        node.props.some(
+          (p) => p.key.toLowerCase() === 'tcoords' && Number(p.value.split(/\s+/)[0]) === index,
+        ) ||
+        seen.has(key)
+      )
+        throw Error('Недопустимая вставка координат рамки');
+      seen.add(key);
+      insertions.set(
+        edit,
+        `        tcoords ${nums.join(' ')}${text.includes('\r\n') ? '\r\n' : '\n'}`,
+      );
+      continue;
+    }
     const key = `${edit.start}:${edit.end}`,
       field = fields.get(key);
     if (!field || seen.has(key) || !editable.has(field.key.toLowerCase()))
       throw Error('Неизвестное или повторное поле');
     seen.add(key);
+    const lower = field.key.toLowerCase();
+    if (
+      ['maxitems', 'rowheight'].includes(lower) &&
+      (!/^\d+$/.test(edit.value) ||
+        Number(edit.value) < 1 ||
+        Number(edit.value) > (lower === 'maxitems' ? 10000 : 512))
+    )
+      throw Error(
+        lower === 'maxitems' ? 'История: 1–10000 сообщений' : 'Высота строки: 1–512 пикселей',
+      );
     if (
       typeof edit.value !== 'string' ||
       edit.value.length > 1024 ||
@@ -151,7 +212,8 @@ export function applyEdits(text, edits) {
   }
   let result = text;
   for (const edit of [...edits].sort((a, b) => b.start - a.start))
-    result = result.slice(0, edit.start) + edit.value + result.slice(edit.end);
+    result =
+      result.slice(0, edit.start) + (insertions.get(edit) ?? edit.value) + result.slice(edit.end);
   parse(result);
   return result;
 }

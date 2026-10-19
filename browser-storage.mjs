@@ -3,7 +3,7 @@ import { rgbaFromDds } from './dds-core.mjs';
 import { entries, child, read, write, permission, UploadedDirectory } from './browser-files.mjs';
 import { zip, download } from './zip.mjs';
 import { resolution } from './layout-core.mjs';
-import { fontDefinitions, prepareFonts, validAsset, backupFile } from './font-core.mjs';
+import { fontDefinitions, prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
 
 export async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
@@ -154,6 +154,12 @@ export class BrowserStorage {
         ))
           fonts.push({ id: Number(m[1]) + 2, asset: m[2], name: m[3]?.trim() || m[2] });
       } catch {}
+      for (const font of fonts)
+        if (font.asset) {
+          try {
+            font.height = readSfn(await read(effects, font.asset + '.sfn')).height;
+          } catch {}
+        }
       for (const url of this.imageCache.values()) URL.revokeObjectURL(await url.catch(() => ''));
       this.imageCache.clear();
       this.current = record;
@@ -276,6 +282,12 @@ export class BrowserStorage {
         decode((await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })) || new Uint8Array()),
       ),
     ];
+    for (const font of this.fonts)
+      if (font.asset) {
+        try {
+          font.height = readSfn(await read(this.effects, font.asset + '.sfn')).height;
+        } catch {}
+      }
   }
   async save(files, fontScales = [], fontsHash) {
     const current = this.current;

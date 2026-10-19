@@ -1,6 +1,8 @@
 import { createStorage } from './storage.mjs';
 import { anchors, placement, fitPlacement, overflow } from './layout-core.mjs';
 import { fontAlias } from './font-core.mjs';
+import { chatInfo, planChat } from './chat-core.mjs';
+import { hotbarInfo, planHotbar } from './hotbar-core.mjs';
 const storage = await createStorage();
 let fontPlans = [];
 const $ = (id) => document.getElementById(id);
@@ -81,7 +83,13 @@ const titles = {
   del_char_window: 'Удаление персонажа',
   inventory: 'Инвентарь',
   puppet: 'Персонаж и снаряжение',
-  chat: 'Чат',
+  chat: 'Компактный чат',
+  chat_st2: 'Полный чат',
+  chat_sys: 'Системные сообщения',
+  chatenter: 'Строка ввода чата',
+  quick_items: 'Панель хоткеев',
+  fraction: 'Выбор фракции',
+  fractionn: 'Выбор фракции (альтернативный)',
   bank: 'Банк',
   connect_message: 'Потеря связи',
   connection: 'Вход в игру',
@@ -103,6 +111,8 @@ const classes = {
   SLOT: 'Ячейка',
   SCROLLBAR: 'Прокрутка',
   TEXTLIST: 'Список',
+  HTCHATLISTCTRL: 'Список сообщений',
+  HTEDIT: 'Строка ввода',
   RICHEDIT: 'Текстовое поле',
   PROGRESS_BAR: 'Индикатор',
   CHECKBOX: 'Переключатель',
@@ -144,7 +154,9 @@ const nodeKey = (n) => `${active.file.name}:${n.id}`;
 const changed = (file) => [...edits.keys()].some((k) => k.startsWith(file.name + ':'));
 const val = (n, key, fallback = '', file = active?.file) => {
   const p = get(n, key);
-  return p ? (edits.get(keyFor(file, p))?.value ?? p.value) : fallback;
+  return p
+    ? (edits.get(keyFor(file, p))?.value ?? p.value)
+    : (edits.get(`${file?.name}:${n.closeStart}:${key}`)?.value ?? fallback);
 };
 const nums = (n, key, fallback = '0 0', file = active?.file) =>
   val(n, key, fallback, file).trim().split(/\s+/).map(Number);
@@ -172,9 +184,41 @@ function nodeLabel(n) {
   const help = tooltip && resolveText(get(tooltip, 'toolstr')?.value || '');
   return (
     text ||
+    (/^UISTR_/i.test(clean(val(n, 'windowText'))) ? clean(val(n, 'windowText')) : '') ||
     help ||
     `${classes[val(n, 'classID').toUpperCase()] || 'Элемент'} ${active.controls.indexOf(n) + 1}`
   );
+}
+function keyDescription(n) {
+  const key = clean(val(n, 'windowText'));
+  if (!/^UISTR_/i.test(key)) return '';
+  const translated = data.strings[key],
+    references = active.controls
+      .map((node, i) => (clean(val(node, 'windowText')) === key ? `#${i + 1}` : ''))
+      .filter(Boolean),
+    position = nums(n, 'position'),
+    neighbor = active.controls.find(
+      (node) =>
+        /RADIOBUTTON/i.test(val(node, 'classID')) &&
+        Math.abs(nums(node, 'position')[1] - position[1]) <= 2,
+    );
+  return `${key}\nКлюч текста элемента, ссылка на language/strings.ui.\n${translated !== undefined ? `Перевод: ${translated}` : 'Нет перевода в выбранном клиенте. Точное значение не определено.'}\nОкно: ${active.title} (${active.name}). ${references.length ? 'Элементы: ' + references.join(', ') + '.' : 'Заголовок окна.'}${neighbor ? '\nПодпись рядом с вариантом выбора #' + (active.controls.indexOf(neighbor) + 1) + '.' : ''}\nИгра может подставлять текст сценарием при открытии окна. Предпросмотр показывает имя ключа.`;
+}
+function hideKeyTooltip() {
+  clearTimeout(hideKeyTooltip.timer);
+  $('key-tooltip').hidden = true;
+}
+function showKeyTooltip(n, event) {
+  const description = n && keyDescription(n);
+  if (!description) {
+    hideKeyTooltip();
+    return;
+  }
+  const tooltip = $('key-tooltip');
+  tooltip.textContent = description;
+  tooltip.hidden = false;
+  tooltip.style.left = clamp(event.clientX + 16, 8, innerWidth - tooltip.offsetWidth - 8) + 'px';
+  tooltip.style.top = clamp(event.clientY + 16, 8, innerHeight - tooltip.offsetHeight - 8) + 'px';
 }
 function toast(text, error = false) {
   $('toast-text').textContent = text;
@@ -261,7 +305,9 @@ function layers() {
     glyph.append(icon(nodeIcon(n)));
     row.append(glyph, el('span', 'layer-name', label));
     if (index) row.append(el('span', 'layer-number', String(index).padStart(2, '0')));
-    row.title = `${label}${index ? ' · #' + index : ''}${/^true$/i.test(val(n, 'hidden')) ? ' · Скрыт в клиенте' : ''}`;
+    row.title =
+      keyDescription(n) ||
+      `${label}${index ? ' · #' + index : ''}${/^true$/i.test(val(n, 'hidden')) ? ' · Скрыт в клиенте' : ''}`;
     if (n !== active.node) {
       const actions = el('div', 'layer-actions');
       const eye = el('button', 'icon-button');
@@ -398,7 +444,58 @@ function edit(n, key, text, file = active.file, occurrence = 0) {
     paint();
   }
 }
+const readLayout = (n, key, fallback = '', occurrence = 0) => {
+  const p = get(n, key, occurrence);
+  return p ? (edits.get(keyFor(active.file, p))?.value ?? p.value) : val(n, key, fallback);
+};
+function editAnchor(node, text, file = active.file) {
+  if (get(node, 'alignWin')) return edit(node, 'alignWin', text, file);
+  const start = node.closeStart;
+  edits.set(`${file.name}:${start}:alignWin`, {
+    file: file.name,
+    node: node.id,
+    key: 'alignWin',
+    insert: 'alignWin',
+    start,
+    end: start,
+    value: text,
+  });
+}
+function editCoords(node, text, file = active.file) {
+  const index = Number(text.split(/\s+/)[0]),
+    props = node.props.filter((p) => p.key.toLowerCase() === 'tcoords'),
+    occurrence = props.findIndex((p) => Number(p.value.split(/\s+/)[0]) === index);
+  if (occurrence >= 0) {
+    edit(node, 'tcoords', text, file, occurrence);
+    return;
+  }
+  // Original source offsets are stable until the next save/reload.
+  const start = node.closeStart,
+    key = `${file.name}:${start}:tcoords:${index}`;
+  if (!Number.isInteger(start)) throw Error('Откройте папку клиента заново для изменения рамки');
+  const texture = node.props
+    .filter((p) => p.key.toLowerCase() === 'texture')
+    [index]?.value.match(/"[^"]*"|\S+/g);
+  if (texture?.length === 9) {
+    const [sx, sy, ex, ey] = texture.slice(1, 5).map(Number),
+      original = [index, sx, sy, ex, sy, ex, ey, sx, ey].join(' ');
+    if (text === original) {
+      edits.delete(key);
+      return;
+    }
+  }
+  edits.set(key, {
+    file: file.name,
+    node: node.id,
+    key: 'tcoords',
+    insert: 'tcoords',
+    start,
+    end: start,
+    value: text,
+  });
+}
 function choose(w, animate = true) {
+  hideKeyTooltip();
   if (!w) return;
   if (active) views.set(active.name, { zoom, origin: [...origin], mode: viewMode });
   active = w;
@@ -602,6 +699,134 @@ function inspector() {
       geometry.append(b);
     }
   }
+  if (!multi) {
+    const chat = chatInfo(active.node, readLayout, data.fonts);
+    if (chat) {
+      const controls = group('Настройки чата', 'Текст без увеличения'),
+        apply = guarded((rows, history) => {
+          const rootPosition = nums(active.node, 'position'),
+            anchor = anchors(val(active.node, 'alignWin')),
+            maxHeight = $('safe-screen').checked
+              ? gameSize()[1] -
+                (anchor[1] === 1
+                  ? Math.max(0, -rootPosition[1])
+                  : anchor[1] === 0
+                    ? Math.max(0, rootPosition[1])
+                    : Math.abs(rootPosition[1]) * 2)
+              : 16384,
+            plan = planChat(active.node, { rows, history, maxHeight }, readLayout, data.fonts);
+          snapshot();
+          batchEdit(() => {
+            for (const p of plan.edits) edit(p.node, p.key, p.value, active.file, p.occurrence);
+            constrainWindow(active);
+          });
+          layers();
+          inspector();
+          fit();
+        });
+      for (const [label, id, initial, min, max] of [
+        ['Видимых строк', 'chat-rows', chat.rows, 2, 80],
+        ['История сообщений', 'chat-history', chat.history, 2, 10000],
+      ]) {
+        const field = el('label', '', label),
+          input = el('input');
+        input.id = id;
+        input.type = 'number';
+        input.min = min;
+        input.max = max;
+        input.value = initial;
+        input.disabled = disabled;
+        input.setAttribute('aria-label', label);
+        input.onchange = () => apply(Number($('chat-rows').value), Number($('chat-history').value));
+        field.append(input);
+        controls.append(field);
+      }
+      for (const rows of [6, 12, 20]) {
+        const button = el('button', '', `${rows} строк`);
+        button.disabled = disabled;
+        button.onclick = () => apply(rows, Math.max(chat.history, rows));
+        controls.append(button);
+      }
+      const description = el(
+        'div',
+        'field-description wide',
+        `Одна строка: ${chat.rowHeight} px. На холсте показаны примеры. Длинное сообщение может занимать несколько строк.${chat.name === 'chat' ? ' Для просмотра истории с прокруткой откройте полный чат.' : ''}`,
+      );
+      controls.append(description);
+      if (chat.name === 'chat_st2')
+        note(
+          'Игровой сценарий читает шрифт чата из CHAT_LIST_FONT в config.cfg. Настройка числа строк сохраняет этот шрифт.',
+        );
+    }
+    const hotbar = hotbarInfo(active.node, readLayout);
+    if (hotbar) {
+      const controls = group('Панель хоткеев', `${hotbar.slots} слотов`);
+      for (const [label, horizontal] of [
+        ['Горизонтально', true],
+        ['Вертикально', false],
+      ]) {
+        const button = el('button', hotbar.horizontal === horizontal ? 'active' : '', label);
+        button.id = horizontal ? 'hotbar-horizontal' : 'hotbar-vertical';
+        button.disabled = disabled;
+        button.onclick = guarded(() => {
+          const plan = planHotbar(
+            active.node,
+            horizontal,
+            readLayout,
+            [...edits.values()].filter((e) => e.insert && e.file === active.file.name),
+          );
+          if (!plan.length) return;
+          snapshot();
+          batchEdit(() => {
+            for (const p of plan)
+              p.insert
+                ? editCoords(p.node, p.value)
+                : edit(p.node, p.key, p.value, active.file, p.occurrence);
+            constrainWindow(active);
+          });
+          layers();
+          inspector();
+          fit();
+        });
+        controls.append(button);
+      }
+      controls.append(
+        el(
+          'div',
+          'field-description wide',
+          'Горизонтальная рамка обращена декором вверх для размещения у нижнего края. Иконки и подписи клавиш сохраняют ориентацию.',
+        ),
+      );
+      const dock = el('button', 'wide', 'К нижнему краю');
+      dock.id = 'hotbar-bottom';
+      dock.disabled = disabled;
+      dock.onclick = guarded(() => {
+        snapshot();
+        batchEdit(() => {
+          for (const p of planHotbar(
+            active.node,
+            true,
+            readLayout,
+            [...edits.values()].filter((e) => e.insert && e.file === active.file.name),
+          ))
+            p.insert
+              ? editCoords(p.node, p.value)
+              : edit(p.node, p.key, p.value, active.file, p.occurrence);
+          const x = anchors(val(active.node, 'alignWin'))[0];
+          editAnchor(
+            active.node,
+            `${x === 1 ? 'RIGHT_X' : x === 0.5 ? 'CENTER_X' : 'LEFT_X'} | RIGHT_Y`,
+          );
+          edit(active.node, 'position', `${nums(active.node, 'position')[0]} 0`);
+          constrainWindow(active);
+        });
+        layers();
+        inspector();
+        fit();
+      });
+      controls.append(dock);
+    }
+  }
   const keys = [
     'font',
     'textcolor',
@@ -697,9 +922,14 @@ function inspector() {
       const description = el(
         'div',
         'field-description',
-        translated || 'Нет перевода. Служебный ключ не отображается на холсте.',
+        translated ||
+          'Нет перевода. В предпросмотре показано имя ключа. Наведите курсор для объяснения.',
       );
-      if (raw !== translated) description.append(el('span', 'translation-key', raw));
+      if (raw !== translated) {
+        const key = el('span', 'translation-key', raw);
+        key.title = keyDescription(selected);
+        description.append(key);
+      }
       appearance.append(description);
     }
   }
@@ -809,7 +1039,12 @@ function drawSprite(name, x, y, width, height) {
     const [sx, sy, ex, ey, dx, dy, dex, dey] = tokens.slice(1).map(Number);
     const custom = s.props
       .filter((p) => p.key === 'tcoords')
-      .map((p) => p.value.split(/\s+/).map(Number))
+      .map((p) => (edits.get(keyFor(file, p))?.value ?? p.value).split(/\s+/).map(Number))
+      .concat(
+        [...edits.values()]
+          .filter((e) => e.insert === 'tcoords' && e.file === file.name && e.node === s.id)
+          .map((e) => e.value.split(/\s+/).map(Number)),
+      )
       .find((a) => a[0] === index);
     if ((!custom && (sx === ex || sy === ey)) || dx === dex || dy === dey) continue;
     ctx.save();
@@ -891,6 +1126,11 @@ function paint() {
   }
 }
 function drawText(n, r, raw = val(n, 'windowText')) {
+  const rawKey = clean(raw);
+  if (/^UISTR_/i.test(rawKey) && data.strings[rawKey] === undefined) {
+    if ($('placeholders').checked) drawPlaceholder(r, rawKey);
+    return;
+  }
   const text = resolveText(raw);
   if (!text || r.w <= 0 || r.h <= 0) return;
   ctx.save();
@@ -938,6 +1178,62 @@ function drawText(n, r, raw = val(n, 'windowText')) {
     y = r.y + r.h / 2 + offset[1];
   ctx.fillText(text, x, y);
   ctx.restore();
+}
+function drawPlaceholder(r, key) {
+  if (r.w < 1 || r.h < 1) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.clip();
+  ctx.fillStyle = '#ad9bff20';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.strokeStyle = '#b4a1ff80';
+  ctx.setLineDash([3 / zoom, 3 / zoom]);
+  ctx.lineWidth = 1 / zoom;
+  ctx.strokeRect(r.x + 0.5 / zoom, r.y + 0.5 / zoom, r.w - 1 / zoom, r.h - 1 / zoom);
+  ctx.setLineDash([]);
+  ctx.font = `${Math.max(4, Math.min(10, r.h - 3))}px Consolas, monospace`;
+  ctx.fillStyle = '#d0c3ff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  let label = key;
+  while (label.length > 1 && ctx.measureText(label).width > r.w - 6)
+    label = label.slice(0, -2) + '…';
+  if (r.w > 8) ctx.fillText(label, r.x + 3, r.y + r.h / 2);
+  ctx.restore();
+}
+const chatSamples = [
+  '[Общий] Элиан: Собираем группу у западных ворот.',
+  '[Группа] Мира: Я готова, можно начинать.',
+  '[Система] Получен предмет: зелье восстановления.',
+  '[Гильдия] Рен: Встречаемся вечером у замка.',
+  '[Личный] Лина: Спасибо за помощь!',
+  '[Торговля] Торин: Обменяю материалы для ремесла.',
+];
+function drawChatPreview(node, r) {
+  const info = chatInfo(active.node, readLayout, data.fonts);
+  if (!info || info.list !== node || !$('chat-samples').checked) return false;
+  const count = Math.min(info.rows, info.history, 80);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.clip();
+  for (let row = 0; row < count; row++) {
+    const y = r.y + r.h - (count - row) * info.rowHeight;
+    drawText(node, { x: r.x, y, w: r.w, h: info.rowHeight }, chatSamples[row % chatSamples.length]);
+  }
+  ctx.restore();
+  for (const scrollbar of node.children.filter((n) => n.kind.toLowerCase() === 'scrollbar')) {
+    const p = nums(scrollbar, 'position'),
+      s = nums(scrollbar, 'size'),
+      x = r.x + p[0],
+      y = r.y + p[1];
+    ctx.fillStyle = '#08090f88';
+    ctx.fillRect(x, y, s[0], s[1]);
+    ctx.fillStyle = '#b8abc677';
+    ctx.fillRect(x + 2, y + Math.max(0, s[1] - 24), Math.max(2, s[0] - 4), Math.min(24, s[1]));
+  }
+  return true;
 }
 function draw() {
   paintPending = false;
@@ -1014,7 +1310,7 @@ function draw() {
       ctx.fillStyle = '#080a0d50';
       ctx.fillRect(r.x, r.y, r.w, r.h);
     }
-    drawText(n, r);
+    if (!drawChatPreview(n, r)) drawText(n, r);
     if ($('bounds').checked) {
       ctx.strokeStyle = '#a99bff2c';
       ctx.lineWidth = 1 / zoom;
@@ -1266,6 +1562,7 @@ function snapMove(b, dx, dy, exclude) {
   return [dx, dy];
 }
 canvas.onpointerdown = (e) => {
+  hideKeyTooltip();
   if (e.button === 2) return;
   closePopups();
   tween = null;
@@ -1374,6 +1671,7 @@ canvas.onpointermove = (e) => {
       layerStates();
       paint();
     }
+    showKeyTooltip(n, e);
     return;
   }
   const rootResize = drag.type === 'resize' && selected === active.node;
@@ -1559,6 +1857,7 @@ $('frame-label').onpointerdown = (e) => {
   viewport.focus();
 };
 canvas.onpointerleave = () => {
+  hideKeyTooltip();
   if (!drag) {
     hover = null;
     if (active) layerStates();
@@ -1913,7 +2212,8 @@ document.querySelectorAll('[data-zoom]').forEach(
       closePopups();
     }),
 );
-for (const id of ['bounds', 'grid', 'smart-snap']) $(id).onchange = paint;
+for (const id of ['bounds', 'grid', 'smart-snap', 'placeholders', 'chat-samples'])
+  $(id).onchange = paint;
 $('screen-mode').onchange = () => fit();
 $('placement-preview').onclick = () => {
   $('screen-mode').checked = !$('screen-mode').checked;
@@ -1982,7 +2282,11 @@ $('reset').onclick = () => {
       .map((p) => p.start),
   );
   for (const [k, e] of edits)
-    if (e.file === active.file.name && starts.has(e.start)) edits.delete(k);
+    if (
+      e.file === active.file.name &&
+      (starts.has(e.start) || (e.insert && walk(active.node).some((n) => n.id === e.node)))
+    )
+      edits.delete(k);
   list();
   layers();
   inspector();
@@ -2060,7 +2364,12 @@ $('save').onclick = guarded(async () => {
     hash: file.hash,
     edits: [...edits.values()]
       .filter((e) => e.file === file.name)
-      .map(({ start, end, value }) => ({ start, end, value })),
+      .map(({ start, end, value, insert, node }) => ({
+        start,
+        end,
+        value,
+        ...(insert ? { insert, node } : {}),
+      })),
   }));
   $('save').disabled = true;
   try {
@@ -2183,6 +2492,7 @@ $('export').onclick = () => {
     'titletextmargin',
     'selectionborder',
     'rowheight',
+    'maxitems',
     'scrollspr',
   ]);
   const settings = [];
@@ -2197,6 +2507,9 @@ $('export').onclick = () => {
             occurrence: node.props.filter((x) => x.key === p.key).indexOf(p),
             value: edits.get(keyFor(file, p))?.value ?? p.value,
           });
+  for (const e of edits.values())
+    if (e.insert)
+      settings.push({ file: e.file, node: e.node, key: e.key, insert: e.insert, value: e.value });
   const url = URL.createObjectURL(
     new Blob(
       [
@@ -2241,7 +2554,13 @@ $('profile').onchange = guarded(async (e) => {
   for (const edit of profile.edits) {
     const target = data.files.find((f) => f.name === edit.file),
       node = target && walk(target.tree).find((n) => n.id === edit.node);
-    if (!node || !get(node, edit.key, edit.occurrence || 0) || typeof edit.value !== 'string')
+    if (
+      !node ||
+      (!(edit.insert === 'tcoords' && edit.key === 'tcoords' && node.kind === 'sprite') &&
+        !(edit.insert === 'alignWin' && edit.key === 'alignWin' && node.kind === 'windowUI') &&
+        !get(node, edit.key, edit.occurrence || 0)) ||
+      typeof edit.value !== 'string'
+    )
       throw Error(`Профиль не подходит к файлу ${edit.file}`);
     batch.push({ edit, target, node });
   }
@@ -2258,15 +2577,18 @@ $('profile').onchange = guarded(async (e) => {
   }
   batchEdit(() => {
     for (const { edit: e, target, node } of batch)
-      edit(
-        node,
-        e.key,
-        e.key.toLowerCase() === 'font' && fontMap.has(Number(e.value))
-          ? String(fontMap.get(Number(e.value)))
-          : e.value,
-        target,
-        e.occurrence || 0,
-      );
+      if (e.insert === 'tcoords') editCoords(node, e.value, target);
+      else if (e.insert === 'alignWin') editAnchor(node, e.value, target);
+      else
+        edit(
+          node,
+          e.key,
+          e.key.toLowerCase() === 'font' && fontMap.has(Number(e.value))
+            ? String(fontMap.get(Number(e.value)))
+            : e.value,
+          target,
+          e.occurrence || 0,
+        );
   });
   list();
   layers();

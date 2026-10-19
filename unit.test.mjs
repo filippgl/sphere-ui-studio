@@ -1,6 +1,8 @@
 import test from 'node:test';
 import { anchors, placement, fitPlacement, overflow, resolution } from './layout-core.mjs';
 import { scaleSfn, readSfn } from './font-core.mjs';
+import { chatInfo, planChat } from './chat-core.mjs';
+import { planHotbar, hotbarInfo } from './hotbar-core.mjs';
 import assert from 'node:assert/strict';
 import { inflateSync } from 'node:zlib';
 import { decode, encode, parse, walk, prop, applyEdits } from './ui-model.mjs';
@@ -160,4 +162,231 @@ test('SFNT масштабирует метрики всех 224 символов
   }
   assert.throws(() => scaleSfn(before, 5), /Масштаб/);
   assert.throws(() => scaleSfn(before.slice(0, -1), 2), /структура/);
+});
+const chatFixture = `windowUI
+{
+windowName "chat_st2"
+size 583 146
+spritesDef
+{
+sprite
+{
+name "frame"
+size 583 146
+texture "atlas" 0 0 256 32 0 114 583 146
+}
+}
+drawMethod SPRITE "frame"
+control
+{
+classID HTCHATLISTCTRL
+position 15 30
+size 530 87
+font 5
+rowHeight 14
+maxItems 256
+scrollbar
+{
+size 16 46
+rightbutton
+{
+position -1 45
+size 18 18
+}
+}
+}
+control
+{
+classID HTEDIT
+position 32 123
+size 500 18
+font 4
+}
+}
+`;
+function layoutEdits(plan) {
+  return plan.map((p) => {
+    if (p.insert)
+      return {
+        insert: 'tcoords',
+        node: p.node.id,
+        start: p.node.closeStart,
+        end: p.node.closeStart,
+        value: p.value,
+      };
+    const field = p.node.props.filter((f) => f.key.toLowerCase() === p.key.toLowerCase())[
+      p.occurrence || 0
+    ];
+    return { start: field.start, end: field.end, value: p.value };
+  });
+}
+test('Чат добавляет строки и историю, перемещая ввод и прокрутку без изменения шрифтов и номеров', () => {
+  const root = parse(chatFixture).children[0],
+    plan = planChat(root, { rows: 20, history: 1000 }),
+    result = parse(applyEdits(chatFixture, layoutEdits(plan.edits))).children[0],
+    nodes = walk(result);
+  assert.equal(chatInfo(root).rows, 6);
+  assert.equal(chatInfo(result).rows, 20);
+  assert.equal(chatInfo(result).history, 1000);
+  assert.equal(prop(result, 'size').value, '583 342');
+  assert.equal(
+    prop(
+      nodes.find((n) => prop(n, 'classID')?.value === 'HTEDIT'),
+      'position',
+    ).value,
+    '32 319',
+  );
+  assert.equal(
+    prop(
+      nodes.find((n) => n.kind === 'scrollbar'),
+      'size',
+    ).value,
+    '16 242',
+  );
+  assert.equal(
+    prop(
+      nodes.find((n) => n.kind === 'rightbutton'),
+      'position',
+    ).value,
+    '-1 241',
+  );
+  assert.deepEqual(
+    nodes.map((n) => prop(n, 'font')?.value),
+    walk(root).map((n) => prop(n, 'font')?.value),
+  );
+  assert.deepEqual(
+    nodes.map((n) => n.id),
+    walk(root).map((n) => n.id),
+  );
+  assert.equal(
+    prop(
+      nodes.find((n) => n.kind === 'sprite'),
+      'texture',
+    ).value,
+    '"atlas" 0 0 256 32 0 310 583 342',
+  );
+  assert.equal(planChat(root, { rows: 80, history: 256, maxHeight: 200 }).rows, 9);
+  assert.throws(() => planChat(root, { rows: 0, history: 256 }), /Строки/);
+  for (const value of ['-1', '0', '1.5', '10001', 'abc']) {
+    const p = prop(chatInfo(root).list, 'maxItems');
+    assert.throws(
+      () => applyEdits(chatFixture, [{ start: p.start, end: p.end, value }]),
+      /История/,
+    );
+  }
+});
+const hotbarFixture = `windowUI
+{
+windowName "quick_items"
+size 26 253
+drawMethod SPRITE "frame"
+spritesDef
+{
+sprite
+{
+name "frame"
+size 26 253
+texture "atlas" 205 0 231 253 0 0 26 253
+}
+}
+control
+{
+classID SLOT
+position 5 30
+size 14 14
+}
+control
+{
+classID BUTTON
+position 2 26
+size 21 21
+uncheckedImage "icon"
+}
+}
+`;
+test('Хоткеи меняют раскладку и UV рамки, сохраняя размеры и ориентацию иконок; вставки ограничены спрайтом', () => {
+  const root = parse(hotbarFixture).children[0],
+    changes = layoutEdits(planHotbar(root, true)),
+    horizontalText = applyEdits(hotbarFixture, changes),
+    horizontal = parse(horizontalText).children[0],
+    slot = horizontal.children.find((n) => prop(n, 'classID')?.value === 'SLOT');
+  assert.equal(hotbarInfo(horizontal).horizontal, true);
+  assert.equal(prop(slot, 'position').value, '30 7');
+  assert.equal(prop(slot, 'size').value, '14 14');
+  const sprite = walk(horizontal).find((n) => n.kind === 'sprite');
+  assert.equal(prop(sprite, 'texture').value, '"atlas" 205 0 231 253 0 0 253 26');
+  assert.equal(prop(sprite, 'tcoords').value, '0 231 0 231 253 205 253 205 0');
+  const vertical = parse(applyEdits(horizontalText, layoutEdits(planHotbar(horizontal, false))))
+    .children[0];
+  assert.equal(hotbarInfo(vertical).horizontal, false);
+  assert.equal(
+    prop(
+      vertical.children.find((n) => prop(n, 'classID')?.value === 'SLOT'),
+      'position',
+    ).value,
+    '5 30',
+  );
+  const inserted = changes.find((e) => e.insert);
+  assert.throws(() => applyEdits(hotbarFixture, [{ ...inserted, start: 0, end: 0 }]), /вставка/);
+  assert.throws(() => applyEdits(hotbarFixture, [inserted, inserted]), /вставка/);
+  assert.throws(() => applyEdits(hotbarFixture, [{ ...inserted, value: '0 1 2 3' }]), /вставка/);
+  assert.deepEqual(
+    walk(horizontal).map((n) => n.id),
+    walk(root).map((n) => n.id),
+  );
+});
+test('Сохранённая горизонтальная рамка отражается вверх без перестановки слотов и повторного отражения', () => {
+  const legacy = hotbarFixture
+    .replaceAll('26 253', '253 26')
+    .replace('position 5 30', 'position 30 5')
+    .replace('position 2 26', 'position 26 2')
+    .replace('0 0 26 253', '0 0 253 26')
+    .replace(
+      'texture "atlas" 205 0 231 253 0 0 253 26',
+      'texture "atlas" 205 0 231 253 0 0 253 26\ntcoords 0 205 0 205 253 231 253 231 0',
+    );
+  const root = parse(legacy).children[0];
+  const result = parse(applyEdits(legacy, layoutEdits(planHotbar(root, true)))).children[0];
+  const slot = result.children.find((n) => prop(n, 'classID')?.value === 'SLOT');
+  assert.equal(prop(slot, 'position').value, '30 7');
+  assert.equal(prop(slot, 'size').value, '14 14');
+  assert.equal(
+    prop(
+      walk(result).find((n) => n.kind === 'sprite'),
+      'tcoords',
+    ).value,
+    '0 231 0 231 253 205 253 205 0',
+  );
+  assert.deepEqual(planHotbar(result, true), []);
+});
+test('Нижняя привязка вставляется только в окно и сохраняет прилегание при смене разрешения', () => {
+  const root = parse(hotbarFixture).children[0];
+  const insertion = {
+    insert: 'alignWin',
+    node: root.id,
+    start: root.closeStart,
+    end: root.closeStart,
+    value: 'LEFT_X | RIGHT_Y',
+  };
+  const result = parse(applyEdits(hotbarFixture, [insertion])).children[0];
+  for (const screen of [
+    [1024, 768],
+    [1920, 1080],
+    [2560, 1440],
+  ]) {
+    const size = [506, 52],
+      pos = placement(size, [0, 0], prop(result, 'alignWin').value, screen);
+    assert.equal(pos[1] + size[1], screen[1]);
+  }
+  for (const value of ['RIGHT_Y\nwindowUI', 'RIGHT_Y | LEFT_Y', 'LEFT_X | LEFT_X'])
+    assert.throws(() => applyEdits(hotbarFixture, [{ ...insertion, value }]), /вставка/);
+  const sprite = walk(root).find((n) => n.kind === 'sprite');
+  assert.throws(
+    () =>
+      applyEdits(hotbarFixture, [
+        { ...insertion, node: sprite.id, start: sprite.closeStart, end: sprite.closeStart },
+      ]),
+    /вставка/,
+  );
+  assert.throws(() => applyEdits(hotbarFixture, [insertion, insertion]), /вставка/);
 });

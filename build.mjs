@@ -16,6 +16,8 @@ const files = [
   'ui-core.mjs',
   'dds-core.mjs',
   'layout-core.mjs',
+  'chat-core.mjs',
+  'hotbar-core.mjs',
   'font-core.mjs',
   'zip.mjs',
   'WINDOWS.md',

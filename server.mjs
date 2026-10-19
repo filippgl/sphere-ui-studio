@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { decode, encode, hash, parse, walk, value, unquote, applyEdits } from './ui-model.mjs';
 import { rgbaFromDds, png } from './dds.mjs';
 import { resolution } from './layout-core.mjs';
-import { prepareFonts, validAsset, backupFile } from './font-core.mjs';
+import { prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (name) => {
@@ -38,6 +38,14 @@ async function readFonts(root) {
     ))
       result.push({ id: Number(m[1]) + 2, asset: m[2], name: m[3]?.trim() || m[2] });
   } catch {}
+  for (const font of result)
+    if (font.asset) {
+      try {
+        font.height = readSfn(
+          await fs.readFile(path.join(root, 'effects', font.asset + '.sfn')),
+        ).height;
+      } catch {}
+    }
   return result;
 }
 let fonts = [];
@@ -445,6 +453,8 @@ const server = http.createServer(async (req, res) => {
       '/ui-core.mjs': ['ui-core.mjs', 'text/javascript'],
       '/dds-core.mjs': ['dds-core.mjs', 'text/javascript'],
       '/layout-core.mjs': ['layout-core.mjs', 'text/javascript'],
+      '/chat-core.mjs': ['chat-core.mjs', 'text/javascript'],
+      '/hotbar-core.mjs': ['hotbar-core.mjs', 'text/javascript'],
       '/font-core.mjs': ['font-core.mjs', 'text/javascript'],
     };
     if (staticFiles[url.pathname]) {

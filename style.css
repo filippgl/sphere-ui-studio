@@ -1164,6 +1164,22 @@ pre {
   width: 270px;
   padding: 16px;
 }
+#key-tooltip {
+  position: fixed;
+  z-index: 1500;
+  max-width: 340px;
+  padding: 12px 14px;
+  border: 1px solid #6f6196;
+  border-radius: 10px;
+  background: #26232ff5;
+  box-shadow: 0 8px 28px #0006;
+  color: #ddd4f0;
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
 .popup-title {
   font-size: 12px;
   font-weight: 550;

@@ -191,6 +191,138 @@ export async function browserChecks({
     'Для окна персонажа показаны все 84 слоя и рамка',
   );
 
+  await openWindow('Полный чат');
+  const chatPath = path.join(effects, 'chat_st2.ui'),
+    chatBefore = await fs.readFile(chatPath),
+    chatRoot = walk(parse(decode(chatBefore))).find((n) => n.kind === 'windowUI');
+  const chatFonts = walk(chatRoot)
+    .flatMap((n) => n.props)
+    .filter((p) => p.key.toLowerCase() === 'font')
+    .map((p) => p.value);
+  await page.getByRole('button', { name: '12 строк', exact: true }).click();
+  check(
+    Number(await field('Видимых строк').inputValue()) === 12,
+    'Чат показывает выбранное число строк',
+  );
+  await field('История сообщений').fill('1000');
+  await field('История сообщений').press('Tab');
+  await page.locator('#save').click();
+  await page.waitForFunction(
+    () => document.getElementById('dirty').textContent === 'Нет изменений',
+  );
+  const chatAfter = walk(parse(decode(await fs.readFile(chatPath)))).find(
+    (n) => n.kind === 'windowUI',
+  );
+  const listAfter = chatAfter.children.find((n) => prop(n, 'classID')?.value === 'HTCHATLISTCTRL');
+  check(
+    prop(listAfter, 'maxItems').value === '1000' &&
+      Number(prop(listAfter, 'size').value.split(/\s+/)[1]) >= 12 * 14,
+    'Размер списка и история записаны в чат клиента',
+  );
+  check(
+    JSON.stringify(
+      walk(chatAfter)
+        .flatMap((n) => n.props)
+        .filter((p) => p.key.toLowerCase() === 'font')
+        .map((p) => p.value),
+    ) === JSON.stringify(chatFonts),
+    'Расширение чата сохраняет игровые шрифты',
+  );
+  check(
+    await page.evaluate(() => window.paintedText.some((text) => text.includes('[Общий]'))),
+    'Предпросмотр чата заполняется примерами сообщений',
+  );
+  await page.locator('#history').click();
+  await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+  await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
+  check(
+    (await fs.readFile(chatPath)).equals(chatBefore),
+    'Откат чата восстанавливает исходный файл целиком',
+  );
+  await openWindow('Компактный чат');
+  await page.getByRole('button', { name: '12 строк', exact: true }).click();
+  check(
+    Number(await field('История сообщений').inputValue()) >= 12,
+    'Расширение компактного чата снимает исходный лимит двух сообщений',
+  );
+  await page.locator('#undo').click();
+
+  await openWindow('Панель хоткеев');
+  const hotbarPath = path.join(effects, 'quickitems.ui'),
+    hotbarBefore = await fs.readFile(hotbarPath),
+    hotbarRoot = walk(parse(decode(hotbarBefore))).find((n) => n.kind === 'windowUI'),
+    initialSize = prop(hotbarRoot, 'size').value.split(/\s+/).map(Number),
+    slotsBefore = hotbarRoot.children.filter((n) => prop(n, 'classID')?.value === 'SLOT');
+  await page.locator('#hotbar-horizontal').click();
+  check(
+    (await value('Ширина')) > (await value('Высота')),
+    'Панель хоткеев становится горизонтальной',
+  );
+  await page.locator('#hotbar-vertical').click();
+  check(
+    await page.locator('#save').isDisabled(),
+    'Возврат вертикальной раскладки до сохранения отменяет все изменения рамки',
+  );
+  await page.locator('#hotbar-horizontal').click();
+  await page.locator('#hotbar-bottom').click();
+  check((await value('Y')) === 0, 'Нижняя привязка убирает отступ от нижнего края');
+  await page.locator('#save').click();
+  await page.waitForFunction(
+    () => document.getElementById('dirty').textContent === 'Нет изменений',
+  );
+  const hotbarAfter = walk(parse(decode(await fs.readFile(hotbarPath)))).find(
+      (n) => n.kind === 'windowUI',
+    ),
+    slotsAfter = hotbarAfter.children.filter((n) => prop(n, 'classID')?.value === 'SLOT');
+  check(
+    prop(hotbarAfter, 'size').value === [initialSize[1], initialSize[0]].join(' '),
+    'Горизонтальная геометрия сохранена в клиент',
+  );
+  check(
+    slotsAfter.every(
+      (n, i) =>
+        n.id === slotsBefore[i].id && prop(n, 'size').value === prop(slotsBefore[i], 'size').value,
+    ),
+    'Все предметные слоты сохраняют размеры и игровые номера',
+  );
+  check(
+    walk(hotbarAfter).some((n) => n.props.some((p) => p.key === 'tcoords')),
+    'Поворот рамки сохранён как нативные координаты UV',
+  );
+  check(
+    prop(hotbarAfter, 'alignWin').value.includes('RIGHT_Y'),
+    'Нижняя привязка сохранена нативным полем клиента',
+  );
+  await page.locator('#history').click();
+  await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+  await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
+  check(
+    (await fs.readFile(hotbarPath)).equals(hotbarBefore),
+    'Откат хоткеев удаляет вставку UV и восстанавливает исходные байты',
+  );
+
+  await page.evaluate(() => (window.paintedText = []));
+  await openWindow('Выбор фракции');
+  check(
+    await page.evaluate(() => window.paintedText.some((t) => t === 'UISTR_WC_FRAC2')),
+    'Заглушка FRAC2 снова видна внутри своего элемента',
+  );
+  await select(6);
+  await waitView();
+  const fractionFrame = await frame();
+  await page.mouse.move(
+    fractionFrame.x + ((await value('X')) + 20) * fractionFrame.z,
+    fractionFrame.y + ((await value('Y')) + 8) * fractionFrame.z,
+  );
+  await page.locator('#key-tooltip').waitFor({ state: 'visible' });
+  check(
+    (await page.locator('#key-tooltip').textContent()).includes('UISTR_WC_FRAC2') &&
+      (await page.locator('#key-tooltip').textContent()).includes('#6, #7'),
+    'Подсказка объясняет ключ и перечисляет использующие его элементы',
+  );
+  check(await page.locator('#save').isDisabled(), 'Заглушки и подсказки не изменяют файлы клиента');
+  await page.evaluate(() => (window.paintedText = []));
+
   await openWindow('Альянсы и войны');
   check(
     await page
@@ -201,8 +333,8 @@ export async function browserChecks({
     'Скрытая заготовка из скриншота помечена скрытой',
   );
   check(
-    await page.evaluate(() => !window.paintedText.some((t) => t.includes('UISTR_'))),
-    'Служебные ключи перевода не рисуются на холсте',
+    await page.evaluate(() => !window.paintedText.some((t) => t.includes('UISTR_WC_ALLY07'))),
+    'Ключ скрытого элемента не рисуется, пока слой скрыт',
   );
   check(
     await page.evaluate(() => window.paintedText.some((t) => t.includes('Заключить альянс'))),
@@ -227,8 +359,8 @@ export async function browserChecks({
     .getByRole('button', { name: /^Видимость:/ })
     .click();
   check(
-    await page.evaluate(() => !window.paintedText.some((t) => t.includes('UISTR_'))),
-    'Принудительный показ скрытого элемента не выводит неизвестный ключ',
+    await page.evaluate(() => window.paintedText.some((t) => t.includes('UISTR_WC_ALLY07'))),
+    'Принудительный показ скрытого элемента возвращает подпись неизвестного ключа',
   );
   check(await page.locator('#save').isDisabled(), 'Просмотр скрытого слоя не меняет файлы игры');
 
