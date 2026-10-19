@@ -5,6 +5,12 @@ export function anchors(value = '') {
     /RIGHT_Y|BOTTOM_Y/.test(value) ? 1 : /CENTER_Y/.test(value) ? 0.5 : 0,
   ];
 }
+export function anchorText([x, y]) {
+  return [
+    x === 1 ? 'RIGHT_X' : x === 0.5 ? 'CENTER_X' : 'LEFT_X',
+    ...(y === 1 ? ['RIGHT_Y'] : y === 0.5 ? ['CENTER_Y'] : []),
+  ].join(' | ');
+}
 export function placement(size, position, align, screen) {
   const a = anchors(align);
   return position.map((p, i) => p + (screen[i] - size[i]) * a[i]);

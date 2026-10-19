@@ -1,7 +1,7 @@
 import { createStorage } from './storage.mjs';
-import { anchors, placement, fitPlacement, overflow } from './layout-core.mjs';
+import { anchors, anchorText, placement, fitPlacement, overflow } from './layout-core.mjs';
 import { fontAlias } from './font-core.mjs';
-import { chatInfo, planChat } from './chat-core.mjs';
+import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
 import { hotbarInfo, planHotbar } from './hotbar-core.mjs';
 import { scaleSource, captureScaleBase, validateScaleBase } from './ui-core.mjs';
 const storage = await createStorage();
@@ -678,9 +678,7 @@ function inspector() {
         ? 'FRAME'
         : val(selected, 'classID');
   $('elements').disabled = none || multi;
-  document
-    .querySelectorAll('[data-align]')
-    .forEach((b) => (b.disabled = disabled || selected === active?.node));
+  document.querySelectorAll('[data-align]').forEach((b) => (b.disabled = disabled));
   $('selection-focus').disabled = none;
   source();
   if (none) return;
@@ -771,6 +769,33 @@ function inspector() {
         field.append(input);
         controls.append(field);
       }
+      const pitch = el('label', '', 'Высота строки, px'),
+        pitchInput = el('input');
+      pitchInput.id = 'chat-row-height';
+      pitchInput.type = 'number';
+      pitchInput.min = 8;
+      pitchInput.max = 64;
+      pitchInput.value = chat.rowHeight;
+      pitchInput.disabled = disabled;
+      pitchInput.setAttribute('aria-label', 'Высота строки, px');
+      pitchInput.onchange = guarded(() => {
+        const plan = planChatRowHeight(
+          active.node,
+          pitchInput.valueAsNumber,
+          readLayout,
+          data.fonts,
+        );
+        if (!plan.edits.length) return;
+        snapshot();
+        batchEdit(() => {
+          for (const p of plan.edits) edit(p.node, p.key, p.value, active.file, p.occurrence);
+        });
+        layers();
+        inspector();
+        paint();
+      });
+      pitch.append(pitchInput);
+      controls.append(pitch);
       for (const rows of [6, 12, 20]) {
         const button = el('button', '', `${rows} строк`);
         button.disabled = disabled;
@@ -780,7 +805,7 @@ function inspector() {
       const description = el(
         'div',
         'field-description wide',
-        `Одна строка: ${chat.rowHeight} px. На холсте показаны примеры. Длинное сообщение может занимать несколько строк.${chat.name === 'chat' ? ' Для просмотра истории с прокруткой откройте полный чат.' : ''}`,
+        `Одна строка: ${chat.rowHeight} px. Меньшая высота строки вмещает больше сообщений в то же окно; не делайте её ниже высоты шрифта. На холсте показаны примеры. Длинное сообщение может занимать несколько строк.${chat.name === 'chat' ? ' Для просмотра истории с прокруткой откройте полный чат.' : ''}`,
       );
       controls.append(description);
       if (chat.name === 'chat_st2')
@@ -842,11 +867,7 @@ function inspector() {
             p.insert
               ? editCoords(p.node, p.value)
               : edit(p.node, p.key, p.value, active.file, p.occurrence);
-          const x = anchors(val(active.node, 'alignWin'))[0];
-          editAnchor(
-            active.node,
-            `${x === 1 ? 'RIGHT_X' : x === 0.5 ? 'CENTER_X' : 'LEFT_X'} | RIGHT_Y`,
-          );
+          editAnchor(active.node, anchorText([anchors(val(active.node, 'alignWin'))[0], 1]));
           edit(active.node, 'position', `${nums(active.node, 'position')[0]} 0`);
           constrainWindow(active);
         });
@@ -1924,7 +1945,25 @@ canvas.ondblclick = (e) => {
     }
   }
 };
+// The whole window is docked through alignWin, so the game keeps it at the edge on any screen.
+function alignWindow(mode) {
+  const axis = /left|right|center-x/.test(mode) ? 0 : 1,
+    anchor = anchors(val(active.node, 'alignWin')),
+    position = nums(active.node, 'position');
+  anchor[axis] = /left|top/.test(mode) ? 0 : /center/.test(mode) ? 0.5 : 1;
+  position[axis] = 0;
+  snapshot();
+  batchEdit(() => {
+    editAnchor(active.node, anchorText(anchor));
+    edit(active.node, 'position', position.join(' '));
+    constrainWindow(active);
+  });
+  layers();
+  inspector();
+  fit();
+}
 function align(mode) {
+  if (selection.length === 1 && selected === active.node) return alignWindow(mode);
   const nodes = selection.filter((n) => n !== active.node && !isLocked(n));
   if (!nodes.length) return;
   snapshot();

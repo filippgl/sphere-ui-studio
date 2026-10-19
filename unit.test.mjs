@@ -1,7 +1,14 @@
 import test from 'node:test';
-import { anchors, placement, fitPlacement, overflow, resolution } from './layout-core.mjs';
+import {
+  anchors,
+  anchorText,
+  placement,
+  fitPlacement,
+  overflow,
+  resolution,
+} from './layout-core.mjs';
 import { scaleSfn, readSfn } from './font-core.mjs';
-import { chatInfo, planChat } from './chat-core.mjs';
+import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
 import { planHotbar, hotbarInfo } from './hotbar-core.mjs';
 import { captureScaleBase, scaleSource } from './ui-core.mjs';
 import assert from 'node:assert/strict';
@@ -152,6 +159,14 @@ export function sfnFixture() {
 }
 test('RIGHT_Y, центр и правый край совпадают с нативными привязками; вписывание сохраняет якорь', () => {
   assert.deepEqual(anchors('RIGHT_X RIGHT_Y'), [1, 1]);
+  for (const anchor of [
+    [0, 0],
+    [0.5, 0],
+    [1, 0.5],
+    [0, 1],
+  ])
+    assert.deepEqual(anchors(anchorText(anchor)), anchor);
+  assert.equal(anchorText([0.5, 1]), 'CENTER_X | RIGHT_Y');
   assert.deepEqual(placement([800, 700], [-20, -10], 'RIGHT_X RIGHT_Y', [1920, 1080]), [1100, 370]);
   assert.deepEqual(
     fitPlacement([800, 700], [100, -500], 'RIGHT_X CENTER_Y', [1920, 1080]),
@@ -242,6 +257,17 @@ function layoutEdits(plan) {
     return { start: field.start, end: field.end, value: p.value };
   });
 }
+test('Плотные строки чата добавляют сообщения без изменения окна', () => {
+  const root = parse(chatFixture).children[0],
+    plan = planChatRowHeight(root, 10),
+    result = parse(applyEdits(chatFixture, layoutEdits(plan.edits))).children[0];
+  assert.equal(plan.edits.length, 1);
+  assert.equal(chatInfo(result).rows, 8);
+  assert.equal(prop(result, 'size').value, '583 146');
+  assert.equal(prop(chatInfo(result).list, 'size').value, '530 87');
+  assert.deepEqual(planChatRowHeight(root, 14).edits, []);
+  assert.throws(() => planChatRowHeight(root, 4), /8–64/);
+});
 test('Чат добавляет строки и историю, перемещая ввод и прокрутку без изменения шрифтов и номеров', () => {
   const root = parse(chatFixture).children[0],
     plan = planChat(root, { rows: 20, history: 1000 }),

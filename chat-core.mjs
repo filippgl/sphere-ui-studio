@@ -123,3 +123,19 @@ export function planChat(root, { rows, history, maxHeight = 16384 }, read = rawV
     rowHeight: info.rowHeight,
   };
 }
+
+// Fit more messages into the same list by tightening the line pitch; the window keeps its size.
+export function planChatRowHeight(root, rowHeight, read = rawValue, fonts = []) {
+  const info = chatInfo(root, read, fonts),
+    field = info && prop(info.list, 'rowHeight');
+  if (!field) throw Error('В этом окне не задана высота строки списка сообщений');
+  if (!Number.isInteger(rowHeight) || rowHeight < 8 || rowHeight > 64)
+    throw Error('Высота строки: 8–64 px');
+  return {
+    edits:
+      rowHeight === info.rowHeight
+        ? []
+        : [{ node: info.list, key: field.key, occurrence: 0, value: String(rowHeight) }],
+    rows: Math.max(1, Math.floor(info.size[1] / rowHeight)),
+  };
+}
