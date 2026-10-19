@@ -60,6 +60,115 @@ export async function browserChecks({
   await page.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
   await waitView();
   check(
+    await page.locator('#safe-screen').isChecked(),
+    'Ограничение игровым экраном включено по умолчанию',
+  );
+  check(
+    await page.locator('#scale-contents').isChecked(),
+    'Размер окна по умолчанию меняется вместе с содержимым',
+  );
+  await popup('#scale-open', '#scale-popup');
+  await page.locator('#scale').selectOption('1.5');
+  await page.locator('#scale-window').click();
+  await waitView();
+  check(
+    (await value('Ширина')) === Math.round(baseWidth * 1.5),
+    'Рамка растёт вместе с содержимым',
+  );
+  check(
+    Number(await field('Шрифт').inputValue()) > 13,
+    'При увеличении назначен отдельный шрифт клиента',
+  );
+  await page.locator('#save').click();
+  await page.waitForFunction(
+    () => document.getElementById('dirty').textContent === 'Нет изменений',
+  );
+  const fontConfig = decode(await fs.readFile(path.join(fixture, 'fonts.cfg')));
+  check(
+    fontConfig.includes('studio_f3_1500'),
+    'Сохранение создаёт конфигурацию увеличенного шрифта',
+  );
+  check(
+    (await fs.stat(path.join(effects, 'studio_f3_1500.sfn'))).size > 6000,
+    'Метрики сохранены в SFNT',
+  );
+  check(
+    (await fs.stat(path.join(fixture, 'xadd/studio_f3_1500.dds'))).size > 0,
+    'Атлас доступен нативному загрузчику',
+  );
+  await page.locator('#history').click();
+  await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+  await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
+  check(
+    hash(await fs.readFile(path.join(effects, file.name))) === file.hash,
+    'Откат увеличения восстанавливает UI',
+  );
+  check(
+    !decode(await fs.readFile(path.join(fixture, 'fonts.cfg'))).includes('studio_f3_1500'),
+    'Откат восстанавливает fonts.cfg',
+  );
+  await assertFileAbsent(path.join(effects, 'studio_f3_1500.sfn'));
+  check(true, 'Откат удаляет только созданные редактором шрифты');
+  const resizeFrame = await frame();
+  await page.mouse.move(
+    resizeFrame.x + baseWidth * resizeFrame.z,
+    resizeFrame.y + baseHeight * resizeFrame.z,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    resizeFrame.x + (baseWidth + 30) * resizeFrame.z,
+    resizeFrame.y + (baseHeight + 30) * resizeFrame.z,
+    { steps: 6 },
+  );
+  await page.mouse.up();
+  check(
+    (await value('Ширина')) > baseWidth && Number(await field('Шрифт').inputValue()) > 13,
+    'Угловой маркер увеличивает рамку и шрифт вместе',
+  );
+  check(
+    Math.abs((await value('Ширина')) / (await value('Высота')) - baseWidth / baseHeight) < 0.005,
+    'Масштабирование рамкой сохраняет пропорции',
+  );
+  await page.keyboard.press('Control+z');
+  await waitView();
+  await field('Ширина').fill('9999');
+  await field('Ширина').press('Tab');
+  await waitView();
+  check(
+    (await value('Высота')) <= 1080 && (await value('Ширина')) <= 1920,
+    'Содержимое ограничено экраном при вводе большого размера',
+  );
+  check(
+    !(await page.locator('#screen-placement').getAttribute('class')).includes('overflow'),
+    'Предпросмотр подтверждает видимость всего окна',
+  );
+  await page.keyboard.press('Control+z');
+  await waitView();
+  await popup('#view-open', '#view-popup');
+  await page.locator('#safe-screen').uncheck();
+  await page.locator('#view-open').click();
+  await field('Y').fill('-100');
+  await field('Y').press('Tab');
+  await waitView();
+  check(
+    (await page.locator('#screen-placement').getAttribute('class')).includes('overflow'),
+    'Выход за экран подсвечен даже при изолированном холсте',
+  );
+  await page.locator('#fit-screen').click();
+  await waitView();
+  check(
+    !(await page.locator('#screen-placement').getAttribute('class')).includes('overflow'),
+    'Кнопка возвращает закреплённое окно в экран',
+  );
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Control+z');
+  await waitView();
+  // Keep the existing geometry-only scenarios explicit; full scaling is covered above.
+  await popup('#scale-open', '#scale-popup');
+  await page.locator('#scale-contents').uncheck();
+  await page.locator('#scale-fonts').uncheck();
+  await page.locator('#scale-open').click();
+  check(
     (await page.locator('#client-summary').textContent()) === (await fs.realpath(fixture)),
     'В рабочей области виден путь к выбранному клиенту',
   );
@@ -591,4 +700,12 @@ export async function browserChecks({
     child?.kill();
   }
   await page.close();
+}
+async function assertFileAbsent(name) {
+  try {
+    await fs.access(name);
+    throw Error('Generated file still exists: ' + name);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
 }

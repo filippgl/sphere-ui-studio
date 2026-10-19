@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { decode, parse, walk, prop, applyEdits } from './ui-model.mjs';
 import { crc32 } from './zip.mjs';
+import { readSfn } from './font-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const original = process.env.SPHERE_CLIENT || process.argv[2];
@@ -25,6 +26,10 @@ for (const name of (await fs.readdir(path.join(original, 'effects'))).filter((n)
   await add('effects/' + name, await fs.readFile(path.join(original, 'effects', name)));
 for (const name of ['fonts.cfg', 'language/strings.ui', 'textures/fx/i_pick01.dds'])
   await add(name, await fs.readFile(path.join(original, name)));
+for (const folder of ['effects', 'xadd'])
+  for (const name of await fs.readdir(path.join(original, folder)))
+    if (/^fnt_sphere[01](?:_(?:d|f|i|p|spa))?\.(?:sfn|dds)$/i.test(name))
+      await add(folder + '/' + name, await fs.readFile(path.join(original, folder, name)));
 const before = await fs.readFile(path.join(fixture, 'effects/pickpers.ui'));
 const root = walk(parse(decode(before))).find((n) => n.kind === 'windowUI'),
   field = prop(root, 'size');
@@ -182,6 +187,35 @@ try {
     );
     await page.locator('#connect-client').click();
     await page.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
+    await page.locator('#scale-open').click();
+    await page.locator('#scale').selectOption('1.5');
+    await page.locator('#scale-window').click();
+    await page.locator('#save').click();
+    await page.waitForFunction(
+      () => document.getElementById('dirty').textContent === 'Нет изменений',
+    );
+    check(
+      decode(await fileBytes('fonts.cfg')).includes('studio_f3_1500'),
+      'Онлайн-редактор записывает fonts.cfg через файловый API',
+    );
+    check(
+      readSfn(await fileBytes('effects/studio_f3_1500.sfn')).height ===
+        Math.round(
+          readSfn(await fs.readFile(path.join(original, 'effects/fnt_sphere1.sfn'))).height * 1.5,
+        ),
+      'Метрики букв увеличены в настоящем браузерном файле',
+    );
+    await page.locator('#history').click();
+    await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+    await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
+    check(
+      (await fileBytes('effects/pickpers.ui')).equals(before),
+      'Откат онлайн-масштабирования восстанавливает UI',
+    );
+    check(
+      !decode(await fileBytes('fonts.cfg')).includes('studio_f3_1500'),
+      'Откат онлайн-масштабирования восстанавливает реестр шрифтов',
+    );
     check(
       (await page.locator('#client-summary').textContent()) === 'client-fixture',
       'Показана выбранная пользователем папка',
@@ -192,6 +226,9 @@ try {
       '93 окна читаются браузером с диска',
     );
     await page.locator('#tab-layers').click();
+    await page.locator('#scale-open').click();
+    await page.locator('#scale-contents').uncheck();
+    await page.locator('#scale-open').click();
     const texture = await page.evaluate(async () => {
       const { BrowserStorage } = await import('./browser-storage.mjs'),
         store = await BrowserStorage.open(),
@@ -225,7 +262,7 @@ try {
       for await (const [name] of dir.entries()) names.push(name);
       return names;
     });
-    check(ids.length === 1, 'Резервная копия создана внутри выбранной папки');
+    check(ids.length === 2, 'Резервные копии шрифта и геометрии созданы внутри выбранной папки');
     check(
       (await fileBytes(`_interface-editor-backups/${ids[0]}/pickpers.ui`)).equals(before),
       'Бэкап сохраняет точные байты Windows-1251 и CRLF',
@@ -252,7 +289,7 @@ try {
     );
     await page.locator('#undo').click();
     await page.locator('#history').click();
-    await page.getByRole('button', { name: 'Восстановить', exact: true }).click();
+    await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
     await page.waitForFunction(() =>
       document.getElementById('toast-text').textContent.includes('файл менялся'),
     );
@@ -261,7 +298,7 @@ try {
       'Конфликт отката показывается без ложного сообщения об успехе',
     );
     await writeBytes('effects/pickpers.ui', savedBytes);
-    await page.getByRole('button', { name: 'Восстановить', exact: true }).click();
+    await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
     await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
     check(
       (await fileBytes('effects/pickpers.ui')).equals(before),
@@ -295,6 +332,10 @@ try {
     'Браузер без прямой записи получает понятный режим архива',
   );
   await fallback.locator('#folder-files').setInputFiles(fixture);
+  await fallback.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
+  await fallback.locator('#scale-open').click();
+  await fallback.locator('#scale-contents').uncheck();
+  await fallback.locator('#scale-open').click();
   await fallback.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
   await fallback.getByLabel('Ширина', { exact: true }).fill(String(width + 50));
   await fallback.getByLabel('Ширина', { exact: true }).press('Tab');
@@ -331,6 +372,24 @@ try {
       .textContent()
       .then((t) => t.includes('Распакуйте')),
     'После выгрузки ясно указано оставшееся действие пользователя',
+  );
+  await fallback.locator('#scale-open').click();
+  await fallback.locator('#scale').selectOption('1.5');
+  await fallback.locator('#scale-window').click();
+  const fontDownload = fallback.waitForEvent('download');
+  await fallback.locator('#save').click();
+  const fontArchive = path.join(fixture, 'fonts.zip');
+  await (await fontDownload).saveAs(fontArchive);
+  const fontFiles = zipFiles(await fs.readFile(fontArchive));
+  check(
+    fontFiles.has('fonts.cfg') &&
+      fontFiles.has('effects/studio_f3_1500.sfn') &&
+      fontFiles.has('xadd/studio_f3_1500.dds'),
+    'ZIP включает все необходимые файлы увеличенного шрифта',
+  );
+  check(
+    [...fontFiles.keys()].some((name) => name.endsWith('/root--fonts.cfg')),
+    'ZIP сохраняет исходную конфигурацию шрифтов в бэкапе',
   );
   check(
     fallbackErrors.length === 0,

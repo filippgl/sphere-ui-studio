@@ -21,6 +21,17 @@ await fs.copyFile(
   path.join(fixture, 'language/strings.ui'),
 );
 await fs.symlink(path.resolve(original, 'textures'), path.join(fixture, 'textures'), 'junction');
+await fs.mkdir(path.join(fixture, 'xadd'));
+for (const family of ['fnt_sphere0', 'fnt_sphere1']) {
+  for (const name of (await fs.readdir(path.join(original, 'effects'))).filter((n) =>
+    new RegExp(`^${family}(?:_(?:d|f|i|p|spa))?\\.sfn$`, 'i').test(n),
+  ))
+    await fs.copyFile(path.join(original, 'effects', name), path.join(effects, name));
+  for (const name of (await fs.readdir(path.join(original, 'xadd'))).filter((n) =>
+    new RegExp(`^${family}(?:_(?:d|f|i|p|spa))?\\.dds$`, 'i').test(n),
+  ))
+    await fs.copyFile(path.join(original, 'xadd', name), path.join(fixture, 'xadd', name));
+}
 let checks = 0;
 function check(condition, message) {
   assert.ok(condition, message);

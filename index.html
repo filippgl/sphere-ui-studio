@@ -277,6 +277,22 @@
           <pre id="source"></pre>
           <p class="code-caption">Порядок элементов, комментарии и кодировка файла сохраняются.</p>
         </div>
+        <div class="screen-placement" id="screen-placement">
+          <button
+            class="placement-preview"
+            id="placement-preview"
+            title="Показать на игровом экране"
+          >
+            <canvas
+              id="screen-map"
+              width="200"
+              height="108"
+              aria-label="Положение окна на экране клиента"
+            ></canvas>
+          </button>
+          <strong id="placement-status"></strong><small id="placement-detail"></small>
+          <button id="fit-screen" hidden>Вписать в экран</button>
+        </div>
       </aside>
     </main>
     <div id="toast" role="status" aria-live="polite">
@@ -314,6 +330,27 @@
           <option>1280 × 720</option>
         </select></label
       ><label class="setting-field"
+        >Ширина экрана<input
+          id="screen-width"
+          type="number"
+          min="320"
+          max="16384"
+          value="1920"
+          aria-label="Ширина экрана клиента"
+        /> </label
+      ><label class="setting-field"
+        >Высота экрана<input
+          id="screen-height"
+          type="number"
+          min="200"
+          max="16384"
+          value="1080"
+          aria-label="Высота экрана клиента"
+        /> </label
+      ><label class="toggle-row"
+        ><span>Держать в экране<small>Ограничить размер и положение</small></span
+        ><input id="safe-screen" type="checkbox" checked /><span class="switch"></span></label
+      ><label class="setting-field"
         >Шаг перемещения<input
           id="snap"
           type="number"
@@ -337,9 +374,18 @@
           <option value="1.75">175%</option>
           <option value="2">200%</option>
         </select></label
+      ><label class="toggle-row"
+        ><span>Масштабировать содержимое<small>При изменении размера окна</small></span
+        ><input id="scale-contents" type="checkbox" checked /><span class="switch"></span></label
+      ><label class="toggle-row"
+        ><span>Увеличивать шрифты<small>Создать растровые варианты для клиента</small></span
+        ><input id="scale-fonts" type="checkbox" checked /><span class="switch"></span></label
       ><button id="scale-window" class="primary">Применить к окну</button
       ><button id="scale-all">Применить ко всем окнам</button
-      ><small class="popup-description">Растровые шрифты выбираются отдельно.</small>
+      ><small class="popup-description"
+        >Размер ограничен игровым экраном. Классические PCX-шрифты заменяются ближайшим SFNT-шрифтом
+        клиента.</small
+      >
     </div>
     <div id="zoom-popup" class="popup zoom-popup" hidden>
       <button data-zoom="0.5">50%</button><button data-zoom="1">100%<kbd>Ctrl 0</kbd></button

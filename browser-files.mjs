@@ -49,6 +49,9 @@ export class UploadedDirectory {
   async *values() {
     yield* this.children.values();
   }
+  async removeEntry(name) {
+    if (!this.children.delete(name)) throw new DOMException('Файл не найден', 'NotFoundError');
+  }
   async getDirectoryHandle(name, options = {}) {
     const value = this.children.get(name);
     if (value?.kind === 'directory') return value;

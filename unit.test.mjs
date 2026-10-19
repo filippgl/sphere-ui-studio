@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { anchors, placement, fitPlacement, overflow, resolution } from './layout-core.mjs';
+import { scaleSfn, readSfn } from './font-core.mjs';
 import assert from 'node:assert/strict';
 import { inflateSync } from 'node:zlib';
 import { decode, encode, parse, walk, prop, applyEdits } from './ui-model.mjs';
@@ -108,4 +110,54 @@ test('PNG содержит исходный пиксель после распа
     offset += length + 12;
   }
   assert.deepEqual([...inflateSync(Buffer.concat(chunks))], [0, 10, 20, 30, 128]);
+});
+export function sfnFixture() {
+  const header = new TextEncoder().encode('SFNTfont\0font.tga\0'),
+    bytes = new Uint8Array(header.length + 8 + 224 * 28);
+  bytes.set(header);
+  const view = new DataView(bytes.buffer),
+    start = header.length;
+  view.setInt32(start, 18, true);
+  view.setInt32(start + 4, 13, true);
+  for (let glyph = 0; glyph < 224; glyph++) {
+    const offset = start + 8 + glyph * 28;
+    [10, 14, -1, 12, 8, 0].forEach((n, i) => view.setInt16(offset + i * 2, n, true));
+    [0.1, 0.2, 0.3, 0.4].forEach((n, i) => view.setFloat32(offset + 12 + i * 4, n, true));
+  }
+  return bytes;
+}
+test('RIGHT_Y, центр и правый край совпадают с нативными привязками; вписывание сохраняет якорь', () => {
+  assert.deepEqual(anchors('RIGHT_X RIGHT_Y'), [1, 1]);
+  assert.deepEqual(placement([800, 700], [-20, -10], 'RIGHT_X RIGHT_Y', [1920, 1080]), [1100, 370]);
+  assert.deepEqual(
+    fitPlacement([800, 700], [100, -500], 'RIGHT_X CENTER_Y', [1920, 1080]),
+    [0, -190],
+  );
+  assert.equal(overflow([800, 700], [0, -190], 'RIGHT_X CENTER_Y', [1920, 1080]), false);
+  assert.equal(overflow([2000, 700], [0, 0], 'RIGHT_X', [1920, 1080]), true);
+  assert.deepEqual(resolution('XRES\t2580\r\nYRES\t1080'), [2580, 1080]);
+  assert.equal(resolution('XRES 0\nYRES 0'), null);
+});
+test('SFNT масштабирует метрики всех 224 символов, сохраняя UV и исходные байты', () => {
+  const before = sfnFixture(),
+    result = scaleSfn(before, 2),
+    a = readSfn(before),
+    b = readSfn(result);
+  assert.equal(a.height, 18);
+  assert.equal(b.height, 36);
+  assert.equal(b.baseline, 26);
+  for (let glyph = 0; glyph < 224; glyph++) {
+    const offset = a.start + 8 + glyph * 28;
+    for (let i = 0; i < 6; i++)
+      assert.equal(
+        b.data.getInt16(offset + i * 2, true),
+        a.data.getInt16(offset + i * 2, true) * 2,
+      );
+    assert.deepEqual(
+      result.slice(offset + 12, offset + 28),
+      before.slice(offset + 12, offset + 28),
+    );
+  }
+  assert.throws(() => scaleSfn(before, 5), /Масштаб/);
+  assert.throws(() => scaleSfn(before.slice(0, -1), 2), /структура/);
 });

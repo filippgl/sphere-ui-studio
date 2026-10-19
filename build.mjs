@@ -15,6 +15,8 @@ const files = [
   'browser-files.mjs',
   'ui-core.mjs',
   'dds-core.mjs',
+  'layout-core.mjs',
+  'font-core.mjs',
   'zip.mjs',
   'WINDOWS.md',
 ];

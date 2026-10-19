@@ -1,5 +1,8 @@
 import { createStorage } from './storage.mjs';
+import { anchors, placement, fitPlacement, overflow } from './layout-core.mjs';
+import { fontAlias } from './font-core.mjs';
 const storage = await createStorage();
+let fontPlans = [];
 const $ = (id) => document.getElementById(id);
 const walk = (n) => [n, ...n.children.flatMap(walk)];
 const get = (n, key, occurrence = 0) =>
@@ -335,6 +338,7 @@ function updateDirty() {
 }
 function state(frameView = false) {
   return {
+    fontPlans: fontPlans.map((f) => ({ ...f })),
     edits: new Map(edits),
     window: active?.name,
     ids: selection.map((n) => n.id),
@@ -349,6 +353,7 @@ function snapshot(frameView = false) {
 }
 function restoreState(s) {
   edits = new Map(s.edits);
+  fontPlans = s.fontPlans || [];
   if (s.window && active?.name !== s.window)
     choose(
       windows.find((w) => w.name === s.window),
@@ -491,7 +496,12 @@ function transformField(key, index, value) {
   if (selection.length === 1) {
     const a = nums(selected, key);
     a[index] = key === 'size' ? clamp(value, 1, 32768) : clamp(value, -32768, 32768);
-    edit(selected, key, a.join(' '));
+    if (selected === active.node && key === 'size' && $('scale-contents').checked) {
+      const before = nums(selected, 'size');
+      // A single dimension changes the entire window proportionally.
+      scaleWindow(active, a[index] / before[index], true);
+    } else edit(selected, key, a.join(' '));
+    if (selected === active.node) constrainWindow(active);
   } else {
     const b = bounds(),
       target = { ...b };
@@ -624,7 +634,13 @@ function inspector() {
     const mixed = selection.some((n) => val(n, key) !== val(selected, key));
     if (key === 'font') {
       if (mixed) input.append(new Option('Разные шрифты', ''));
-      for (const f of data.fonts || [])
+      for (const f of [
+        ...(data.fonts || []),
+        ...fontPlans.map((p) => ({
+          ...p,
+          name: `Масштаб ${Math.round(p.factor * 100)}% · шрифт ${p.sourceId}`,
+        })),
+      ])
         input.append(new Option(`${f.id} · ${f.name}`, String(f.id)));
       input.value = mixed ? '' : val(selected, key);
       input.onchange = () => {
@@ -840,16 +856,33 @@ function stageSize() {
     ? $('resolution').value.split(' × ').map(Number)
     : nums(active.node, 'size', '400 300');
 }
+function gameSize() {
+  return $('resolution').value.split(' × ').map(Number);
+}
+function constrainWindow(w) {
+  if (!$('safe-screen').checked || !get(w.node, 'position') || !get(w.node, 'size')) return;
+  const size = nums(w.node, 'size', '0 0', w.file),
+    screen = gameSize();
+  if (size.some((v, i) => v > screen[i])) {
+    size.forEach((v, i) => (size[i] = Math.min(v, screen[i])));
+    edit(w.node, 'size', size.join(' '), w.file);
+  }
+  const position = fitPlacement(
+    size,
+    nums(w.node, 'position', '0 0', w.file),
+    val(w.node, 'alignWin', '', w.file),
+    screen,
+  );
+  edit(w.node, 'position', position.join(' '), w.file);
+}
 function windowOffset() {
   if (!$('screen-mode').checked) return [0, 0];
-  const [sw, sh] = stageSize(),
-    [w, h] = nums(active.node, 'size'),
-    [x, y] = nums(active.node, 'position');
-  const anchor = val(active.node, 'alignWin');
-  return [
-    x + (anchor.includes('RIGHT_X') ? sw - w : anchor.includes('CENTER_X') ? (sw - w) / 2 : 0),
-    y + (anchor.includes('BOTTOM_Y') ? sh - h : anchor.includes('CENTER_Y') ? (sh - h) / 2 : 0),
-  ];
+  return placement(
+    nums(active.node, 'size'),
+    nums(active.node, 'position'),
+    val(active.node, 'alignWin'),
+    gameSize(),
+  );
 }
 function paint() {
   if (!paintPending) {
@@ -866,7 +899,11 @@ function drawText(n, r, raw = val(n, 'windowText')) {
   ctx.clip();
   const color = nums(n, 'textcolor', val(active.node, 'textcolor', '237 208 161'));
   ctx.fillStyle = `rgb(${color.slice(0, 3).join(' ')})`;
-  const id = Number(val(n, 'font', val(active.node, 'font', '3'))),
+  const fontId = Number(val(n, 'font', val(active.node, 'font', '3'))),
+    plan = fontPlans.find((f) => f.id === fontId),
+    alias = (data.fonts.find((f) => f.id === fontId)?.asset || '').match(/^studio_f(\d+)_(\d+)$/),
+    id = plan?.sourceId ?? (alias ? Number(alias[1]) : fontId),
+    factor = plan?.factor ?? (alias ? Number(alias[2]) / 1000 : 1),
     family =
       id === 3
         ? 'Georgia'
@@ -881,7 +918,10 @@ function drawText(n, r, raw = val(n, 'windowText')) {
             12: 'Times New Roman',
             13: 'Verdana',
           }[id] || 'Tahoma';
-  const size = Math.max(1, Math.min(id === 0 || id === 2 ? 10 : id === 1 ? 14 : 13, r.h - 2));
+  const size = Math.max(
+    1,
+    Math.min((id === 0 || id === 2 ? 10 : id === 1 ? 14 : 13) * factor, r.h - 2),
+  );
   ctx.font = `${size}px ${family}`;
   const align = val(n, 'textFormat').toUpperCase(),
     offset = nums(n, 'textofs', '0 0');
@@ -926,6 +966,7 @@ function draw() {
       for (let y = oy; y < height; y += step) ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
   }
   if (!active) {
+    $('screen-placement').hidden = true;
     $('frame-label').hidden = true;
     $('dimension-label').textContent = '';
     return;
@@ -1047,6 +1088,45 @@ function draw() {
   $('frame-label').style.left = origin[0] + off[0] * zoom + 'px';
   $('frame-label').style.top = origin[1] + off[1] * zoom + 'px';
   $('zoom-label').textContent = Math.round(zoom * 100) + '%';
+  drawPlacement();
+}
+function drawPlacement() {
+  $('screen-placement').hidden = false;
+  const map = $('screen-map'),
+    c = map.getContext('2d'),
+    screen = gameSize(),
+    size = nums(active.node, 'size'),
+    position = nums(active.node, 'position'),
+    align = val(active.node, 'alignWin'),
+    point = placement(size, position, align, screen),
+    bad = overflow(size, position, align, screen),
+    margin = 10,
+    s = Math.min((map.width - margin * 2) / screen[0], (map.height - margin * 2) / screen[1]),
+    x = (map.width - screen[0] * s) / 2,
+    y = (map.height - screen[1] * s) / 2;
+  c.clearRect(0, 0, map.width, map.height);
+  c.fillStyle = '#11141b';
+  c.fillRect(x, y, screen[0] * s, screen[1] * s);
+  c.strokeStyle = '#545866';
+  c.strokeRect(x, y, screen[0] * s, screen[1] * s);
+  c.save();
+  c.beginPath();
+  c.rect(x, y, screen[0] * s, screen[1] * s);
+  c.clip();
+  c.fillStyle = bad ? '#ff647a55' : '#ad9bff50';
+  c.strokeStyle = bad ? '#ff7a8e' : '#b9aaff';
+  c.shadowColor = c.strokeStyle;
+  c.shadowBlur = 8;
+  c.fillRect(x + point[0] * s, y + point[1] * s, size[0] * s, size[1] * s);
+  c.strokeRect(x + point[0] * s, y + point[1] * s, size[0] * s, size[1] * s);
+  c.restore();
+  $('screen-placement').classList.toggle('overflow', bad);
+  $('placement-status').textContent = bad
+    ? 'Часть окна за экраном'
+    : `${screen.join(' × ')} · окно целиком видно`;
+  $('placement-detail').textContent =
+    `X ${Math.round(point[0])} · Y ${Math.round(point[1])} · ${size.join(' × ')}`;
+  $('fit-screen').hidden = !bad;
 }
 function setView(z, o, animate = true) {
   z = clamp(z, 0.08, 8);
@@ -1212,6 +1292,8 @@ canvas.onpointerdown = (e) => {
       client: [e.clientX, e.clientY],
       origin: [...origin],
       rootPosition: nums(active.node, 'position'),
+      edits: new Map(edits),
+      fontPlans: fontPlans.map((f) => ({ ...f })),
     };
     return;
   }
@@ -1258,6 +1340,7 @@ canvas.onpointermove = (e) => {
       'position',
       `${Math.round(drag.rootPosition[0] + dx)} ${Math.round(drag.rootPosition[1] + dy)}`,
     );
+    constrainWindow(active);
     if (!$('screen-mode').checked)
       origin = [drag.origin[0] + dx * zoom, drag.origin[1] + dy * zoom];
     syncGeometry();
@@ -1366,6 +1449,26 @@ canvas.onpointermove = (e) => {
     if ([0, 6, 7].includes(h)) b.x = drag.b.x + drag.b.w - b.w;
     if ([0, 1, 2].includes(h)) b.y = drag.b.y + drag.b.h - b.h;
     if (rootResize) {
+      if ($('safe-screen').checked) {
+        const screen = gameSize();
+        b.w = Math.min(b.w, screen[0]);
+        b.h = Math.min(b.h, screen[1]);
+      }
+      if ($('scale-contents').checked) {
+        const ratio = Math.min(b.w / drag.b.w, b.h / drag.b.h);
+        // Side handles use the axis being dragged. Corners preserve aspect ratio.
+        const factor = [3, 7].includes(h)
+          ? b.w / drag.b.w
+          : [1, 5].includes(h)
+            ? b.h / drag.b.h
+            : ratio;
+        edits = new Map(drag.edits);
+        fontPlans = drag.fontPlans.map((f) => ({ ...f }));
+        scaleWindow(active, factor, true);
+        [b.w, b.h] = nums(selected, 'size');
+        if ([0, 6, 7].includes(h)) b.x = drag.b.w - b.w;
+        if ([0, 1, 2].includes(h)) b.y = drag.b.h - b.h;
+      }
       edit(selected, 'size', `${b.w} ${b.h}`);
       const align = val(active.node, 'alignWin'),
         screen = $('screen-mode').checked;
@@ -1376,12 +1479,13 @@ canvas.onpointermove = (e) => {
               ? 0.5
               : 0
           : 0,
-        ay = screen ? (align.includes('BOTTOM_Y') ? 1 : align.includes('CENTER_Y') ? 0.5 : 0) : 0;
+        ay = screen ? anchors(align)[1] : 0;
       edit(
         selected,
         'position',
         `${Math.round(drag.rootPosition[0] + b.x - drag.b.x + (b.w - drag.b.w) * ax)} ${Math.round(drag.rootPosition[1] + b.y - drag.b.y + (b.h - drag.b.h) * ay)}`,
       );
+      constrainWindow(active);
       if (!screen)
         origin = [
           drag.origin[0] + (b.x - drag.b.x) * zoom,
@@ -1528,10 +1632,68 @@ function distribute(axis) {
   inspector();
 }
 
-function scaleWindow(w, factor) {
+function scaledFont(id, factor) {
+  if (Math.abs(factor - 1) < 0.0005) return id;
+  const pending = fontPlans.find((p) => p.id === id),
+    definition = data.fonts.find((f) => f.id === id),
+    alias = definition?.asset?.match(/^studio_f(\d+)_(\d+)$/);
+  let sourceId = pending?.sourceId ?? (alias ? Number(alias[1]) : id);
+  // Legacy PCX fonts have no independent metrics. Use the client's SFNT small/large faces.
+  if (sourceId < 2) sourceId = sourceId === 0 ? 2 : 3;
+  const total =
+    Math.round(factor * (pending?.factor ?? (alias ? Number(alias[2]) / 1000 : 1)) * 1000) / 1000;
+  if (total === 1) return sourceId;
+  if (total < 0.5 || total > 4) throw Error('Размер шрифта выходит за диапазон 50–400%');
+  const existing =
+    data.fonts.find((f) => f.asset === fontAlias(sourceId, total)) ||
+    fontPlans.find((p) => p.sourceId === sourceId && p.factor === total);
+  if (existing) return existing.id;
+  const next = Math.max(1, ...data.fonts.map((f) => f.id), ...fontPlans.map((f) => f.id)) + 1;
+  if (next > 63) throw Error('Закончились номера шрифтов. Сохраните или отмените лишние масштабы');
+  fontPlans.push({ id: next, sourceId, factor: total });
+  return next;
+}
+function scaleWindow(w, factor, fromCurrent = false) {
+  const current = (p) => (fromCurrent ? (edits.get(keyFor(w.file, p))?.value ?? p.value) : p.value);
+  const rootSize = get(w.node, 'size'),
+    rootPosition = get(w.node, 'position');
+  const fontFields = walk(w.node)
+    .flatMap((n) => n.props)
+    .filter((p) => p.key.toLowerCase() === 'font');
+  if ($('scale-fonts').checked && fontFields.length) {
+    const existingScales = fontFields.map((p) => {
+      const id = Number(current(p)),
+        pending = fontPlans.find((f) => f.id === id),
+        alias = data.fonts.find((f) => f.id === id)?.asset?.match(/^studio_f\d+_(\d+)$/);
+      return pending?.factor ?? (alias ? Number(alias[1]) / 1000 : 1);
+    });
+    factor = clamp(
+      factor,
+      Math.max(...existingScales.map((s) => 0.5 / s)),
+      Math.min(...existingScales.map((s) => 4 / s)),
+    );
+  }
+  if (rootSize && $('safe-screen').checked) {
+    const size = current(rootSize).split(/\s+/).map(Number),
+      screen = gameSize();
+    factor = Math.min(factor, ...screen.map((v, i) => v / size[i]));
+  }
+  // Plan fonts before mutating geometry so a missing font cannot leave half a resize.
+  const fontValues = new Map();
+  if ($('scale-fonts').checked)
+    for (const n of walk(w.node))
+      for (const p of n.props)
+        if (p.key.toLowerCase() === 'font')
+          fontValues.set(p, String(scaledFont(Number(current(p)), factor)));
+  const originalValues = new Map(
+    walk(w.node)
+      .flatMap((n) => n.props)
+      .map((p) => [p, current(p)]),
+  );
   for (const n of walk(w.node))
     for (const p of n.props) {
-      let v;
+      const original = originalValues.get(p);
+      let v = fontValues.get(p);
       const geometry = [
         'position',
         'size',
@@ -1549,13 +1711,13 @@ function scaleWindow(w, factor) {
         'scrollspr',
       ];
       if (geometry.includes(p.key.toLowerCase()))
-        v = p.value
+        v = original
           .split(/\s+/)
           .map((x) => Math.round(Number(x) * factor))
           .join(' ');
       if (p.key.toLowerCase() === 'size' && n.kind !== 'windowUI' && get(n, 'position')) {
-        const position = get(n, 'position').value.split(/\s+/).map(Number);
-        v = p.value
+        const position = originalValues.get(get(n, 'position')).split(/\s+/).map(Number);
+        v = original
           .split(/\s+/)
           .map(
             (x, i) =>
@@ -1564,20 +1726,21 @@ function scaleWindow(w, factor) {
           .join(' ');
       }
       if (p.key === 'texture') {
-        const tokens = p.value.match(/"[^"]*"|\S+/g);
+        const tokens = original.match(/"[^"]*"|\S+/g);
         if (tokens.length >= 9)
           v = [
             ...tokens.slice(0, 5),
             ...tokens.slice(5).map((x) => Math.round(Number(x) * factor)),
           ].join(' ');
       }
-      if (['showEffect', 'hideEffect'].includes(p.key) && p.value.trim().startsWith('MOVE_')) {
-        const tokens = p.value.trim().split(/\s+/);
+      if (['showEffect', 'hideEffect'].includes(p.key) && original.trim().startsWith('MOVE_')) {
+        const tokens = original.trim().split(/\s+/);
         v = [
           ...tokens.slice(0, 2),
           ...tokens.slice(2).map((x) => Math.round(Number(x) * factor)),
         ].join(' ');
       }
+      if (p === rootPosition) v = original; // Preserve the margin from the native screen anchor.
       if (v && !v.includes('NaN')) {
         const k = keyFor(w.file, p);
         if (v === p.value) edits.delete(k);
@@ -1592,6 +1755,7 @@ function scaleWindow(w, factor) {
           });
       }
     }
+  if (rootSize) constrainWindow(w);
 }
 
 function navTab(name) {
@@ -1751,7 +1915,45 @@ document.querySelectorAll('[data-zoom]').forEach(
 );
 for (const id of ['bounds', 'grid', 'smart-snap']) $(id).onchange = paint;
 $('screen-mode').onchange = () => fit();
-$('resolution').onchange = () => fit();
+$('placement-preview').onclick = () => {
+  $('screen-mode').checked = !$('screen-mode').checked;
+  fit();
+};
+$('resolution').onchange = () => {
+  const size = gameSize();
+  $('screen-width').value = size[0];
+  $('screen-height').value = size[1];
+  fit();
+};
+for (const id of ['screen-width', 'screen-height'])
+  $(id).onchange = () => {
+    const size = [
+        clamp(Number($('screen-width').value) || 1920, 320, 16384),
+        clamp(Number($('screen-height').value) || 1080, 200, 16384),
+      ].map(Math.round),
+      label = size.join(' × ');
+    if (![...$('resolution').options].some((o) => o.value === label))
+      $('resolution').append(new Option(label, label));
+    $('resolution').value = label;
+    $('resolution').onchange();
+  };
+$('fit-screen').onclick = guarded(() => {
+  if (!active) return;
+  snapshot();
+  const size = nums(active.node, 'size'),
+    screen = gameSize(),
+    factor = Math.min(1, ...screen.map((v, i) => v / size[i]));
+  if (factor < 1) scaleWindow(active, factor, true);
+  const position = fitPlacement(
+    nums(active.node, 'size'),
+    nums(active.node, 'position'),
+    val(active.node, 'alignWin'),
+    screen,
+  );
+  edit(active.node, 'position', position.join(' '));
+  inspector();
+  fit();
+});
 $('elements').onchange = () => {
   const n = [active.node, ...active.controls].find((n) => n.id === $('elements').value);
   if (n) setSelection([n]);
@@ -1787,7 +1989,7 @@ $('reset').onclick = () => {
   updateDirty();
   fit();
 };
-$('scale-window').onclick = () => {
+$('scale-window').onclick = guarded(() => {
   if (!active) return;
   snapshot();
   scaleWindow(active, Number($('scale').value));
@@ -1797,15 +1999,20 @@ $('scale-window').onclick = () => {
   updateDirty();
   fit();
   closePopups();
-};
-$('scale-all').onclick = () => {
+});
+$('scale-all').onclick = guarded(() => {
   if (!active) return;
   snapshot();
   const f = Number($('scale').value);
-  for (const w of windows) if (w.file.name !== 'loadscreen.ui') scaleWindow(w, f);
-  for (const file of data.files)
-    if (!walk(file.tree).some((n) => n.kind === 'windowUI'))
-      scaleWindow({ file, node: file.tree }, f);
+  try {
+    for (const w of windows) if (w.file.name !== 'loadscreen.ui') scaleWindow(w, f);
+    for (const file of data.files)
+      if (!walk(file.tree).some((n) => n.kind === 'windowUI'))
+        scaleWindow({ file, node: file.tree }, f);
+  } catch (error) {
+    restoreState(undo.pop());
+    throw error;
+  }
   layers();
   inspector();
   list();
@@ -1813,9 +2020,27 @@ $('scale-all').onclick = () => {
   fit();
   closePopups();
   toast('Размеры рассчитаны от прочитанных файлов, без накопления');
-};
+});
 $('save').onclick = guarded(async () => {
   if ($('client-path').value !== data.client) throw Error('Сначала откройте выбранную копию игры');
+  if ($('safe-screen').checked) {
+    const bad = windows.find(
+      (w) =>
+        changed(w.file) &&
+        overflow(
+          nums(w.node, 'size', '0 0', w.file),
+          nums(w.node, 'position', '0 0', w.file),
+          val(w.node, 'alignWin', '', w.file),
+          gameSize(),
+        ),
+    );
+    if (bad) {
+      choose(bad);
+      throw Error(
+        'Окно выходит за экран. Нажмите «Вписать в экран» на миниатюре или уточните разрешение',
+      );
+    }
+  }
   const files = data.files.filter(changed).map((file) => ({
     name: file.name,
     hash: file.hash,
@@ -1825,10 +2050,44 @@ $('save').onclick = guarded(async () => {
   }));
   $('save').disabled = true;
   try {
-    const result = await api('/api/save', { files, client: data.client }),
+    const used = new Set(
+      files.flatMap((f) => {
+        const original = data.files.find((file) => file.name === f.name),
+          fonts = new Set(
+            walk(original.tree)
+              .flatMap((n) => n.props)
+              .filter((p) => p.key.toLowerCase() === 'font')
+              .map((p) => p.start),
+          );
+        return f.edits
+          .filter((e) => fonts.has(e.start) && fontPlans.some((p) => p.id === Number(e.value)))
+          .map((e) => Number(e.value));
+      }),
+    );
+    const plans = fontPlans.filter((p) => used.has(p.id));
+    const base = Math.max(1, ...data.fonts.map((f) => f.id));
+    const remap = new Map(plans.map((p, i) => [p.id, base + i + 1]));
+    for (const file of files)
+      for (const patch of file.edits) {
+        const original = data.files.find((f) => f.name === file.name);
+        const field = walk(original.tree)
+          .flatMap((n) => n.props)
+          .find((p) => p.start === patch.start);
+        if (field?.key.toLowerCase() === 'font' && remap.has(Number(patch.value)))
+          patch.value = String(remap.get(Number(patch.value)));
+      }
+    const result = await api('/api/save', {
+        files,
+        client: data.client,
+        fontScales: plans.map((p) => ({ ...p, id: remap.get(p.id) })),
+        fontsHash: data.fontsHash,
+      }),
       name = active.name,
       ids = selection.map((n) => n.id);
     for (const f of result.files) data.files[data.files.findIndex((x) => x.name === f.name)] = f;
+    if (result.fonts) data.fonts = result.fonts;
+    if (result.fontsHash) data.fontsHash = result.fontsHash;
+    fontPlans = [];
     edits.clear();
     undo = [];
     redo = [];
@@ -1925,9 +2184,30 @@ $('export').onclick = () => {
             value: edits.get(keyFor(file, p))?.value ?? p.value,
           });
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify({ format: 'sphere-ui-profile-v1', edits: settings }, null, 2)], {
-      type: 'application/json',
-    }),
+    new Blob(
+      [
+        JSON.stringify(
+          {
+            format: 'sphere-ui-profile-v1',
+            edits: settings,
+            fontScales: [
+              ...data.fonts
+                .filter((f) => /^studio_f\d+_\d+$/.test(f.asset || ''))
+                .map((f) => {
+                  const match = f.asset.match(/^studio_f(\d+)_(\d+)$/);
+                  return { id: f.id, sourceId: Number(match[1]), factor: Number(match[2]) / 1000 };
+                }),
+              ...fontPlans,
+            ],
+          },
+          null,
+          2,
+        ),
+      ],
+      {
+        type: 'application/json',
+      },
+    ),
   );
   const a = el('a');
   a.href = url;
@@ -1952,9 +2232,27 @@ $('profile').onchange = guarded(async (e) => {
     batch.push({ edit, target, node });
   }
   snapshot();
+  const fontMap = new Map();
+  for (const plan of profile.fontScales || []) {
+    if (
+      !Number.isInteger(plan.id) ||
+      !Number.isInteger(plan.sourceId) ||
+      !Number.isFinite(plan.factor)
+    )
+      throw Error('Некорректный шрифт в профиле');
+    fontMap.set(plan.id, scaledFont(plan.sourceId, plan.factor));
+  }
   batchEdit(() => {
     for (const { edit: e, target, node } of batch)
-      edit(node, e.key, e.value, target, e.occurrence || 0);
+      edit(
+        node,
+        e.key,
+        e.key.toLowerCase() === 'font' && fontMap.has(Number(e.value))
+          ? String(fontMap.get(Number(e.value)))
+          : e.value,
+        target,
+        e.occurrence || 0,
+      );
   });
   list();
   layers();
@@ -2333,6 +2631,15 @@ new ResizeObserver(() => {
 }).observe(viewport);
 async function load(preferred = 'pick_person') {
   data = await api('/api/catalog');
+  fontPlans = [];
+  if (data.resolution) {
+    const label = data.resolution.join(' × ');
+    if (![...$('resolution').options].some((o) => o.value === label))
+      $('resolution').append(new Option(label, label));
+    $('resolution').value = label;
+    $('screen-width').value = data.resolution[0];
+    $('screen-height').value = data.resolution[1];
+  }
   $('client').textContent = 'Клиент';
   $('client-path').value = data.client || '';
   $('client-summary').textContent = data.clientLabel || data.client || 'Выберите папку игры';

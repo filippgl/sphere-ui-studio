@@ -2,6 +2,8 @@ import { decode, encode, parse, walk, applyEdits } from './ui-core.mjs';
 import { rgbaFromDds } from './dds-core.mjs';
 import { entries, child, read, write, permission, UploadedDirectory } from './browser-files.mjs';
 import { zip, download } from './zip.mjs';
+import { resolution } from './layout-core.mjs';
+import { fontDefinitions, prepareFonts, validAsset, backupFile } from './font-core.mjs';
 
 export async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
@@ -150,7 +152,7 @@ export class BrowserStorage {
         for (const m of decode(await read(record.handle, 'fonts.cfg')).matchAll(
           /^\s*NEW_FONT_(\d+)\s+"([^"]+)"[^\r\n]*?(?:\/\/\s*([^\r\n]+))?$/gm,
         ))
-          fonts.push({ id: Number(m[1]) + 2, name: m[3]?.trim() || m[2] });
+          fonts.push({ id: Number(m[1]) + 2, asset: m[2], name: m[3]?.trim() || m[2] });
       } catch {}
       for (const url of this.imageCache.values()) URL.revokeObjectURL(await url.catch(() => ''));
       this.imageCache.clear();
@@ -191,6 +193,12 @@ export class BrowserStorage {
       files,
       strings: this.strings,
       fonts: this.fonts,
+      fontsHash: await this.digest(await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })),
+      resolution: resolution(
+        decode(
+          (await this.optionalRead({ scope: 'root', name: 'config.cfg' })) || new Uint8Array(),
+        ),
+      ),
       backups: await this.backups(),
       storageMode: current.downloadOnly ? 'download' : 'browser',
     };
@@ -232,7 +240,44 @@ export class BrowserStorage {
       this.busy = false;
     }
   }
-  async save(files) {
+  async assetDir(item, create = false) {
+    return item.scope === 'root'
+      ? this.current.handle
+      : item.scope
+        ? child(this.current.handle, item.scope, 'directory', create)
+        : this.effects;
+  }
+  async optionalRead(item) {
+    try {
+      return await read(await this.assetDir(item), item.name);
+    } catch (error) {
+      if (error.name === 'NotFoundError') return null;
+      throw error;
+    }
+  }
+  async digest(bytes) {
+    return bytes === null ? null : sha256(bytes);
+  }
+  async putAsset(item, bytes) {
+    const dir = await this.assetDir(item, bytes !== null);
+    if (bytes === null) {
+      try {
+        await dir.removeEntry(item.name);
+      } catch (error) {
+        if (error.name !== 'NotFoundError') throw error;
+      }
+    } else await write(dir, item.name, bytes);
+  }
+  async refreshFonts() {
+    this.fonts = [
+      { id: 0, name: 'Классический малый' },
+      { id: 1, name: 'Классический крупный' },
+      ...fontDefinitions(
+        decode((await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })) || new Uint8Array()),
+      ),
+    ];
+  }
+  async save(files, fontScales = [], fontsHash) {
     const current = this.current;
     const result = await this.exclusive(async () => {
       if (current !== this.current) throw Error('Выбрана другая папка');
@@ -243,6 +288,20 @@ export class BrowserStorage {
       )
         throw Error('Нет изменений или файлы повторяются');
       const changes = [];
+      const cfg = await this.optionalRead({ scope: 'root', name: 'fonts.cfg' });
+      if (fontScales.length && (await this.digest(cfg)) !== fontsHash)
+        throw Error('fonts.cfg изменился. Перечитайте папку');
+      const generated = fontScales.length
+        ? await prepareFonts(
+            fontScales,
+            cfg,
+            async (scope, name) => read(await child(current.handle, scope), name),
+            async (scope) =>
+              (await entries(await child(current.handle, scope)))
+                .filter((e) => e.kind === 'file')
+                .map((e) => e.name),
+          )
+        : { assets: [], definitions: this.fonts };
       for (const f of files) {
         if (!this.names.has(f.name)) throw Error('Неизвестный файл');
         const before = await read(this.effects, f.name);
@@ -257,7 +316,7 @@ export class BrowserStorage {
         for (const edit of f.edits)
           if (
             fontFields.some((p) => p.start === edit.start) &&
-            !this.fonts.some((f) => f.id === Number(edit.value))
+            !generated.definitions.some((f) => f.id === Number(edit.value))
           )
             throw Error('Этот шрифт не указан в fonts.cfg');
         const after = encode(applyEdits(decode(before), f.edits));
@@ -269,23 +328,39 @@ export class BrowserStorage {
           afterHash: await sha256(after),
         });
       }
+      for (const asset of generated.assets) {
+        const before = await this.optionalRead(asset),
+          beforeHash = await this.digest(before),
+          afterHash = await this.digest(asset.after);
+        if (asset.scope !== 'root' && before !== null && beforeHash !== afterHash)
+          throw Error(`Файл ${asset.name} уже существует с другим содержимым`);
+        changes.push({ ...asset, before, beforeHash, afterHash });
+      }
+      changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
       const id =
         new Date().toISOString().replace(/[:.]/g, '-') + '-' + crypto.randomUUID().slice(0, 6);
       const backupRoot = await child(current.handle, backupName, 'directory', true),
         dir = await child(backupRoot, id, 'directory', true);
-      for (const c of changes) await write(dir, c.name, c.before);
+      for (const c of changes) if (c.before !== null) await write(dir, backupFile(c), c.before);
       await write(
         dir,
         'manifest.json',
-        jsonBytes(changes.map((c) => ({ name: c.name, before: c.beforeHash, after: c.afterHash }))),
+        jsonBytes(
+          changes.map((c) => ({
+            name: c.name,
+            ...(c.scope ? { scope: c.scope } : {}),
+            before: c.beforeHash,
+            after: c.afterHash,
+          })),
+        ),
       );
       await write(dir, 'transaction.json', jsonBytes({ state: 'pending' }));
       const written = [];
       try {
         for (const c of changes) {
-          if ((await sha256(await read(this.effects, c.name))) !== c.beforeHash)
+          if ((await this.digest(await this.optionalRead(c))) !== c.beforeHash)
             throw Error(`${c.name}: файл изменился во время сохранения`);
-          await write(this.effects, c.name, c.after);
+          await this.putAsset(c, c.after);
           written.push(c);
         }
         await write(dir, 'transaction.json', jsonBytes({ state: 'committed' }));
@@ -293,8 +368,8 @@ export class BrowserStorage {
         let recovered = true;
         for (const c of written.reverse()) {
           try {
-            if ((await sha256(await read(this.effects, c.name))) === c.afterHash)
-              await write(this.effects, c.name, c.before);
+            if ((await this.digest(await this.optionalRead(c))) === c.afterHash)
+              await this.putAsset(c, c.before);
             else recovered = false;
           } catch {
             recovered = false;
@@ -314,9 +389,12 @@ export class BrowserStorage {
               : `. Исходные файлы сохранены в ${backupName}/${id}; восстановите их из резервной копии.`),
         );
       }
+      await this.refreshFonts();
       return {
         backup: id,
-        files: await Promise.all(changes.map((c) => this.getFile(c.name))),
+        files: await Promise.all(changes.filter((c) => !c.scope).map((c) => this.getFile(c.name))),
+        fonts: this.fonts,
+        fontsHash: await this.digest(await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })),
         downloadOnly: current.downloadOnly,
       };
     });
@@ -337,32 +415,34 @@ export class BrowserStorage {
         throw Error('Повреждён манифест резервной копии');
       const files = [];
       for (const item of manifest) {
-        if (!this.names.has(item.name)) throw Error('Неизвестный файл в резервной копии');
-        const current = await read(this.effects, item.name);
-        if ((await sha256(current)) !== item.after)
+        if (item.scope ? !validAsset(item) : !this.names.has(item.name))
+          throw Error('Неизвестный файл в резервной копии');
+        const current = await this.optionalRead(item);
+        if ((await this.digest(current)) !== item.after)
           throw Error(
             `${item.name}: после этой копии файл менялся. Сначала откатите более новые изменения`,
           );
-        const bytes = await read(dir, item.name);
-        if ((await sha256(bytes)) !== item.before) throw Error('Резервная копия повреждена');
-        files.push({ name: item.name, bytes, current });
+        const bytes = item.before === null ? null : await read(dir, backupFile(item));
+        if ((await this.digest(bytes)) !== item.before) throw Error('Резервная копия повреждена');
+        files.push({ ...item, bytes, current });
       }
       const written = [];
       try {
         for (const f of files) {
-          if ((await sha256(await read(this.effects, f.name))) !== (await sha256(f.current)))
+          if ((await this.digest(await this.optionalRead(f))) !== (await this.digest(f.current)))
             throw Error(`${f.name}: файл изменился во время отката`);
-          await write(this.effects, f.name, f.bytes);
+          await this.putAsset(f, f.bytes);
           written.push(f);
         }
       } catch (error) {
         for (const f of written.reverse())
           try {
-            if ((await sha256(await read(this.effects, f.name))) === (await sha256(f.bytes)))
-              await write(this.effects, f.name, f.current);
+            if ((await this.digest(await this.optionalRead(f))) === (await this.digest(f.bytes)))
+              await this.putAsset(f, f.current);
           } catch {}
         throw error;
       }
+      await this.refreshFonts();
       return { restored: files.map((f) => f.name), downloadOnly: this.downloadOnly };
     });
     if (result.downloadOnly) await this.exportChanges(result.restored, id);
@@ -372,11 +452,20 @@ export class BrowserStorage {
     const root = await child(this.current.handle, backupName),
       dir = await child(root, backup),
       files = [];
-    for (const name of names)
-      files.push(
-        { path: 'effects/' + name, bytes: await read(this.effects, name) },
-        { path: `${backupName}/${backup}/${name}`, bytes: await read(dir, name) },
-      );
+    const manifest = JSON.parse(new TextDecoder().decode(await read(dir, 'manifest.json')));
+    for (const item of manifest) {
+      const bytes = await this.optionalRead(item);
+      if (bytes !== null)
+        files.push({
+          path: (item.scope === 'root' ? '' : (item.scope || 'effects') + '/') + item.name,
+          bytes,
+        });
+      if (item.before !== null)
+        files.push({
+          path: `${backupName}/${backup}/${backupFile(item)}`,
+          bytes: await read(dir, backupFile(item)),
+        });
+    }
     files.push({
       path: `${backupName}/${backup}/manifest.json`,
       bytes: await read(dir, 'manifest.json'),
@@ -474,7 +563,7 @@ export class BrowserStorage {
       case '/api/backups':
         return this.backups();
       case '/api/save':
-        return this.save(body.files);
+        return this.save(body.files, body.fontScales, body.fontsHash);
       case '/api/restore':
         return this.restore(body.id);
       default:

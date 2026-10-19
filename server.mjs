@@ -7,6 +7,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { decode, encode, hash, parse, walk, value, unquote, applyEdits } from './ui-model.mjs';
 import { rgbaFromDds, png } from './dds.mjs';
+import { resolution } from './layout-core.mjs';
+import { prepareFonts, validAsset, backupFile } from './font-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (name) => {
@@ -34,7 +36,7 @@ async function readFonts(root) {
     for (const m of cfg.matchAll(
       /^\s*NEW_FONT_(\d+)\s+"([^"]+)"[^\r\n]*?(?:\/\/\s*([^\r\n]+))?$/gm,
     ))
-      result.push({ id: Number(m[1]) + 2, name: m[3]?.trim() || m[2] });
+      result.push({ id: Number(m[1]) + 2, asset: m[2], name: m[3]?.trim() || m[2] });
   } catch {}
   return result;
 }
@@ -194,7 +196,31 @@ async function backups() {
     return [];
   }
 }
-async function save(files) {
+const assetPath = (item) =>
+  path.join(
+    item.scope === 'root' ? client : item.scope ? path.join(client, item.scope) : effects,
+    item.name,
+  );
+async function optionalRead(target) {
+  try {
+    return await fs.readFile(target);
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+const digest = (bytes) => (bytes === null ? null : hash(bytes));
+async function putAsset(item, bytes) {
+  const target = assetPath(item);
+  if (bytes === null) {
+    await fs.rm(target, { force: true });
+    return;
+  }
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target + '.editor-tmp', bytes);
+  await fs.rename(target + '.editor-tmp', target);
+}
+async function save(files, fontScales = [], fontsHash) {
   if (!client) throw Error('Сначала выберите папку игры');
   if (mutation) throw Error('Дождитесь предыдущего сохранения');
   mutation = true;
@@ -206,6 +232,17 @@ async function save(files) {
     )
       throw Error('Нет изменений');
     const changes = [];
+    const cfg = await optionalRead(path.join(client, 'fonts.cfg'));
+    if (fontScales.length && digest(cfg) !== fontsHash)
+      throw Error('fonts.cfg изменился. Перечитайте папку');
+    const generated = fontScales.length
+      ? await prepareFonts(
+          fontScales,
+          cfg,
+          (scope, name) => fs.readFile(path.join(client, scope, name)),
+          (scope) => fs.readdir(path.join(client, scope)),
+        )
+      : { assets: [], definitions: fonts };
     for (const f of files) {
       if (!validNames.has(f.name)) throw Error('Неизвестный файл');
       const before = await fs.readFile(path.join(effects, f.name));
@@ -217,39 +254,69 @@ async function save(files) {
       for (const edit of f.edits)
         if (
           fontFields.some((p) => p.start === edit.start) &&
-          !fonts.some((f) => f.id === Number(edit.value))
+          !generated.definitions.some((f) => f.id === Number(edit.value))
         )
           throw Error('Этот шрифт не указан в fonts.cfg');
       const after = encode(applyEdits(decode(before), f.edits));
       changes.push({ name: f.name, before, after });
     }
+    for (const asset of generated.assets) {
+      const before = await optionalRead(assetPath(asset));
+      if (asset.scope !== 'root' && before !== null && digest(before) !== digest(asset.after))
+        throw Error(`Файл ${asset.name} уже существует с другим содержимым`);
+      changes.push({ ...asset, before });
+    }
+    // Fonts must exist before any UI file starts referring to their IDs.
+    changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
     const id = new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 6);
     const dir = path.join(backupRoot, id);
     await fs.mkdir(dir, { recursive: true });
-    for (const c of changes) await fs.writeFile(path.join(dir, c.name), c.before);
+    for (const c of changes)
+      if (c.before !== null) await fs.writeFile(path.join(dir, backupFile(c)), c.before);
     await fs.writeFile(
       path.join(dir, 'manifest.json'),
       JSON.stringify(
-        changes.map((c) => ({ name: c.name, before: hash(c.before), after: hash(c.after) })),
+        changes.map((c) => ({
+          name: c.name,
+          ...(c.scope ? { scope: c.scope } : {}),
+          before: digest(c.before),
+          after: digest(c.after),
+        })),
         null,
         2,
       ),
     );
     const written = [];
+    await fs.writeFile(path.join(dir, 'transaction.json'), JSON.stringify({ state: 'pending' }));
     try {
       for (const c of changes) {
         // Recheck after the backup, so a launcher update cannot be silently overwritten
-        if (hash(await fs.readFile(path.join(effects, c.name))) !== hash(c.before))
+        if (digest(await optionalRead(assetPath(c))) !== digest(c.before))
           throw Error(`${c.name}: файл изменился во время сохранения`);
-        await fs.writeFile(path.join(effects, c.name + '.editor-tmp'), c.after);
-        await fs.rename(path.join(effects, c.name + '.editor-tmp'), path.join(effects, c.name));
+        await putAsset(c, c.after);
         written.push(c);
       }
+      await fs.writeFile(
+        path.join(dir, 'transaction.json'),
+        JSON.stringify({ state: 'committed' }),
+      );
     } catch (e) {
-      for (const c of written) await fs.writeFile(path.join(effects, c.name), c.before);
+      for (const c of written.reverse())
+        if (digest(await optionalRead(assetPath(c))) === digest(c.after))
+          await putAsset(c, c.before);
+      await fs.writeFile(
+        path.join(dir, 'transaction.json'),
+        JSON.stringify({ state: 'rolled-back' }),
+      );
       throw e;
     }
-    return { backup: id, files: await Promise.all(changes.map((c) => getFile(c.name))) };
+    fonts = await readFonts(client);
+    return {
+      backup: id,
+      files: await Promise.all(changes.filter((c) => !c.scope).map((c) => getFile(c.name))),
+      fonts,
+      fontsHash: digest(await optionalRead(path.join(client, 'fonts.cfg'))),
+    };
   } finally {
     mutation = false;
   }
@@ -263,26 +330,33 @@ async function restore(id) {
     const manifest = JSON.parse(await fs.readFile(path.join(dir, 'manifest.json'), 'utf8'));
     const files = [];
     for (const item of manifest) {
-      if (!validNames.has(item.name)) throw Error('Неизвестный файл в резервной копии');
-      const current = await fs.readFile(path.join(effects, item.name));
+      if (item.scope ? !validAsset(item) : !validNames.has(item.name))
+        throw Error('Неизвестный файл в резервной копии');
+      const current = await fs.readFile(assetPath(item));
       if (hash(current) !== item.after)
         throw Error(
           `${item.name}: после этой копии файл менялся. Сначала откатите более новые изменения`,
         );
-      const bytes = await fs.readFile(path.join(dir, item.name));
-      if (hash(bytes) !== item.before) throw Error('Резервная копия повреждена');
-      files.push({ name: item.name, bytes, current });
+      const bytes =
+        item.before === null ? null : await fs.readFile(path.join(dir, backupFile(item)));
+      if (digest(bytes) !== item.before) throw Error('Резервная копия повреждена');
+      files.push({ ...item, bytes, current });
     }
     const written = [];
     try {
       for (const f of files) {
-        await fs.writeFile(path.join(effects, f.name), f.bytes);
+        if (digest(await optionalRead(assetPath(f))) !== digest(f.current))
+          throw Error('Файл изменился во время отката');
+        await putAsset(f, f.bytes);
         written.push(f);
       }
     } catch (e) {
-      for (const f of written) await fs.writeFile(path.join(effects, f.name), f.current);
+      for (const f of written.reverse())
+        if (digest(await optionalRead(assetPath(f))) === digest(f.bytes))
+          await putAsset(f, f.current);
       throw e;
     }
+    fonts = await readFonts(client);
     return { restored: files.map((f) => f.name) };
   } finally {
     mutation = false;
@@ -331,7 +405,8 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/pick-folder') return send(res, 200, await pickFolder());
       if (data.client && data.client !== client)
         throw Error('Выбрана другая папка игры. Перечитайте страницу перед сохранением');
-      if (url.pathname === '/api/save') return send(res, 200, await save(data.files));
+      if (url.pathname === '/api/save')
+        return send(res, 200, await save(data.files, data.fontScales, data.fontsHash));
       if (url.pathname === '/api/restore') return send(res, 200, await restore(data.id));
       return send(res, 404, { error: 'Неизвестная команда' });
     }
@@ -341,7 +416,17 @@ const server = http.createServer(async (req, res) => {
       const root = client;
       const files = await Promise.all(names.map(getFile));
       if (root !== client) throw Error('Папка переключена, перечитайте страницу');
-      return send(res, 200, { client, files, strings, fonts, backups: await backups() });
+      const cfg = client ? await optionalRead(path.join(client, 'fonts.cfg')) : null;
+      const config = client ? await optionalRead(path.join(client, 'config.cfg')) : null;
+      return send(res, 200, {
+        client,
+        files,
+        strings,
+        fonts,
+        fontsHash: digest(cfg),
+        resolution: config ? resolution(decode(config)) : null,
+        backups: await backups(),
+      });
     }
     if (url.pathname === '/api/clients') return send(res, 200, await clients());
     if (url.pathname === '/api/backups') return send(res, 200, await backups());
@@ -359,6 +444,8 @@ const server = http.createServer(async (req, res) => {
       '/zip.mjs': ['zip.mjs', 'text/javascript'],
       '/ui-core.mjs': ['ui-core.mjs', 'text/javascript'],
       '/dds-core.mjs': ['dds-core.mjs', 'text/javascript'],
+      '/layout-core.mjs': ['layout-core.mjs', 'text/javascript'],
+      '/font-core.mjs': ['font-core.mjs', 'text/javascript'],
     };
     if (staticFiles[url.pathname]) {
       const [name, type] = staticFiles[url.pathname];
