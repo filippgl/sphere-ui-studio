@@ -90,11 +90,37 @@ export function scaleSource(node) {
       counts.set(key, occurrence + 1);
       const value = fields.get(`${n.id}:${key}:${occurrence}`);
       if (value !== undefined) p.value = value;
+      // A count offset written by a scale stands for the client default of the original.
+      else if (key === 'textofs' && isSlot(n)) p.value = slotTextOffset;
       // A later rotation may have added UVs; their absence in the original matters too.
       return key !== 'tcoords' || value !== undefined;
     });
   }
   return result;
+}
+
+// SlotCtrl (FUN_004c9040) draws the stack count at textofs -2 2 from the top right corner when
+// the .ui has no textofs. The count font keeps its size while the slot frame grows, so a scaled
+// slot needs this offset written out and scaled like an explicit one, or the frame covers digits.
+export const slotTextOffset = '-2 2';
+export const isSlot = (node) =>
+  node.kind === 'control' && value(node, 'classID').trim().toUpperCase() === 'SLOT';
+// Inserts for slots without textofs; `from` gives the offset to scale (the default by default).
+export function slotOffsetInserts(root, factor, from = () => slotTextOffset) {
+  return walk(root)
+    .filter((n) => isSlot(n) && !prop(n, 'textofs'))
+    .map((n) => ({
+      insert: 'textofs',
+      key: 'textofs',
+      node: n.id,
+      start: n.closeStart,
+      end: n.closeStart,
+      value: from(n)
+        .trim()
+        .split(/\s+/)
+        .map((x) => Math.round(Number(x) * factor))
+        .join(' '),
+    }));
 }
 
 export function parse(text) {
@@ -284,6 +310,30 @@ export function applyEdits(text, edits) {
           throw Error('Недопустимая вставка привязки окна');
         seen.add(key);
         insertions.set(edit, `    alignWin ${edit.value}${text.includes('\r\n') ? '\r\n' : '\n'}`);
+        continue;
+      }
+      if (edit.insert === 'textofs') {
+        const key = `${edit.node}:textofs`;
+        if (
+          !node ||
+          !isSlot(node) ||
+          prop(node, 'textofs') ||
+          edit.start !== edit.end ||
+          edit.start !== insertionPoint(text, node) ||
+          typeof edit.value !== 'string' ||
+          !/^-?\d+ -?\d+$/.test(edit.value) ||
+          nums.some((n) => Math.abs(n) > 32768) ||
+          seen.has(key)
+        )
+          throw Error('Недопустимая вставка смещения числа в слоте');
+        seen.add(key);
+        // Same indentation as the slot's own fields.
+        const first = node.props[0]?.start ?? edit.start,
+          indent = text.slice(text.lastIndexOf('\n', first - 1) + 1, first).match(/^[ \t]*/)[0];
+        insertions.set(
+          edit,
+          `${indent}textofs ${edit.value}${text.includes('\r\n') ? '\r\n' : '\n'}`,
+        );
         continue;
       }
       const index = nums[0],

@@ -25,7 +25,7 @@ import {
   iconStore,
 } from './icons-core.mjs';
 import { planHotbar, planHotbarEffects, hotbarInfo } from './hotbar-core.mjs';
-import { captureScaleBase, scaleSource } from './ui-core.mjs';
+import { captureScaleBase, scaleSource, isSlot, slotOffsetInserts } from './ui-core.mjs';
 import assert from 'node:assert/strict';
 import { inflateSync } from 'node:zlib';
 import { decode, encode, parse, walk, prop, applyEdits } from './ui-model.mjs';
@@ -645,4 +645,53 @@ test('Иконки предметов увеличиваются от ориги
   apply((await prepareIcons(1, io)).assets);
   assert.equal(files.get('textures/ar_ring.dds'), icon);
   assert.equal(await currentIconScale(io.read), 1);
+});
+test('Слоты без textofs получают масштабированное смещение числа, а исходный масштаб помнит умолчание', () => {
+  const text =
+    'windowUI\r\n{\r\n  windowName "bag"\r\n  size 205 152\r\n  control\r\n  {\r\n    classID LISTITEM\r\n    size 155 108\r\n    itemTemplate\r\n    {\r\n      size 150 36\r\n      control\r\n      {\r\n\t classID    SLOT\r\n\t size\t    36 35\r\n      }\r\n      control\r\n      {\r\n\t classID SLOT\r\n\t size 36 35\r\n\t textofs -4 1\r\n      }\r\n    }\r\n  }\r\n}\r\n';
+  const root = parse(text).children[0],
+    [list, , plain, explicit] = walk(root).slice(1);
+  const inserts = slotOffsetInserts(root, 1.5);
+  assert.deepEqual(
+    inserts.map((e) => [e.node, e.value]),
+    [[plain.id, '-3 3']],
+  );
+  assert.deepEqual(
+    slotOffsetInserts(root, 1).map((e) => e.value),
+    ['-2 2'],
+  );
+  const baseEdit = {
+    insert: 'scaleBase',
+    node: root.id,
+    start: root.closeStart,
+    end: root.closeStart,
+    value: JSON.stringify(captureScaleBase(root)),
+  };
+  const saved = applyEdits(text, [...inserts, baseEdit]);
+  assert.ok(saved.includes('\t size\t    36 35\r\n\t textofs -3 3\r\n      }'));
+  assert.equal(saved.replaceAll('\r\n', '').includes('\n'), false);
+  const reopened = parse(saved).children[0],
+    slots = walk(reopened).filter(isSlot);
+  assert.deepEqual(
+    slots.map((n) => prop(n, 'textofs').value),
+    ['-3 3', '-4 1'],
+  );
+  // The next scale starts from the client default, not from the already scaled value.
+  assert.deepEqual(
+    walk(scaleSource(reopened))
+      .filter(isSlot)
+      .map((n) => prop(n, 'textofs').value),
+    ['-2 2', '-4 1'],
+  );
+  assert.deepEqual(slotOffsetInserts(reopened, 2), []);
+  const [insert] = inserts;
+  for (const invalid of [
+    { ...insert, node: list.id, start: list.closeStart, end: list.closeStart },
+    { ...insert, node: explicit.id, start: explicit.closeStart, end: explicit.closeStart },
+    { ...insert, start: 0, end: 0 },
+    { ...insert, value: '-3 3 3' },
+    { ...insert, value: '-3\r\ncontrol' },
+  ])
+    assert.throws(() => applyEdits(text, [invalid]), /слоте/);
+  assert.throws(() => applyEdits(text, [insert, insert]), /слоте/);
 });

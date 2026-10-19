@@ -3,7 +3,14 @@ import { anchors, anchorText, placement, fitPlacement, overflow } from './layout
 import { fontAlias } from './font-core.mjs';
 import { chatInfo, planChat } from './chat-core.mjs';
 import { hotbarInfo, planHotbar, planHotbarEffects } from './hotbar-core.mjs';
-import { scaleSource, captureScaleBase, validateScaleBase } from './ui-core.mjs';
+import {
+  scaleSource,
+  captureScaleBase,
+  validateScaleBase,
+  isSlot,
+  slotTextOffset,
+  slotOffsetInserts,
+} from './ui-core.mjs';
 const storage = await createStorage();
 let fontPlans = [];
 const $ = (id) => document.getElementById(id);
@@ -470,6 +477,22 @@ function editAnchor(node, text, file = active.file) {
     end: start,
     value: text,
   });
+}
+// Writes the implicit count offset of a slot without textofs; the default needs no line.
+function editSlotOffset(node, text, file = active.file) {
+  const start = node.closeStart,
+    key = `${file.name}:${start}:textofs`;
+  if (text === slotTextOffset) edits.delete(key);
+  else
+    edits.set(key, {
+      file: file.name,
+      node: node.id,
+      key: 'textofs',
+      insert: 'textofs',
+      start,
+      end: start,
+      value: text,
+    });
 }
 function editScaleBase(node, base, file = active.file) {
   validateScaleBase(base, node);
@@ -2250,6 +2273,15 @@ function scaleWindow(w, factor, fromCurrent = false) {
           });
       }
     }
+  // Slots without textofs use the client's count offset; it is scaled like an explicit one.
+  const pendingOffset = (n) => edits.get(`${w.file.name}:${n.closeStart}:textofs`)?.value;
+  const slots = new Map(walk(w.node).map((n) => [n.id, n]));
+  for (const p of slotOffsetInserts(
+    w.node,
+    factor,
+    (n) => (fromCurrent && pendingOffset(n)) || slotTextOffset,
+  ))
+    editSlotOffset(slots.get(p.node), p.value, w.file);
   if (rootSize) constrainWindow(w);
   rememberScaleBase(w, source);
 }
@@ -2837,6 +2869,7 @@ $('profile').onchange = guarded(async (e) => {
       !node ||
       (!(edit.insert === 'tcoords' && edit.key === 'tcoords' && node.kind === 'sprite') &&
         !(edit.insert === 'alignWin' && edit.key === 'alignWin' && node.kind === 'windowUI') &&
+        !(edit.insert === 'textofs' && edit.key === 'textofs' && isSlot(node)) &&
         !(
           edit.insert === 'scaleBase' &&
           edit.key === 'scaleBase' &&
@@ -2863,6 +2896,10 @@ $('profile').onchange = guarded(async (e) => {
     for (const { edit: e, target, node } of batch)
       if (e.insert === 'tcoords') editCoords(node, e.value, target);
       else if (e.insert === 'alignWin') editAnchor(node, e.value, target);
+      else if (e.insert === 'textofs')
+        get(node, 'textofs')
+          ? edit(node, 'textofs', e.value, target)
+          : editSlotOffset(node, e.value, target);
       else if (e.insert === 'scaleBase') editScaleBase(node, JSON.parse(e.value), target);
       else
         edit(
