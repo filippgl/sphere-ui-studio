@@ -1538,6 +1538,21 @@ h2 {
   color: var(--dim);
   margin-top: 4px;
 }
+#companion-controls {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+#companion-url {
+  width: 100%;
+  margin: 6px 0 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+}
 #backup-list {
   max-height: 50vh;
   overflow: auto;

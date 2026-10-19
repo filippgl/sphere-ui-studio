@@ -427,6 +427,20 @@
         </button>
       </div>
       <p id="storage-description" class="dialog-description" hidden></p>
+      <div id="companion-controls" hidden>
+        <p class="dialog-description">
+          Для доступа ко всем конфигам через сайт запустите локальный помощник. Правки и бэкапы
+          останутся на вашем компьютере.
+        </p>
+        <label class="input-label" for="companion-url">Адрес локального помощника</label>
+        <input
+          id="companion-url"
+          value="http://127.0.0.1:5189"
+          aria-label="Адрес локального помощника"
+          spellcheck="false"
+        />
+        <button id="connect-companion">Подключить помощник</button>
+      </div>
       <input id="folder-files" type="file" webkitdirectory multiple hidden />
       <div class="client-buttons">
         <button id="discover-clients"><span data-icon="search"></span>Найти внутри папки</button

@@ -161,6 +161,25 @@ test('Отказ в разрешении и смена выбранной пап
   );
   assert.equal(decode(await read(effects, 'first.ui')), source);
 });
+test('Ограничение Windows Chromium на CFG объясняется с указанием файла и доступных режимов', async () => {
+  const { root, store } = await fixture();
+  const original = root.getFileHandle.bind(root);
+  root.getFileHandle = async (name, options) => {
+    if (name.endsWith('.cfg'))
+      throw new TypeError(
+        "Failed to execute 'getFileHandle' on 'FileSystemDirectoryHandle': Name is not allowed.",
+      );
+    return original(name, options);
+  };
+  await assert.rejects(
+    store.catalog(),
+    (error) =>
+      error.name === 'BrowserFileRestriction' &&
+      /fonts.cfg/.test(error.message) &&
+      /помощник/.test(error.message) &&
+      /ZIP/.test(error.message),
+  );
+});
 test('ZIP совместим с обычной распаковкой: UTF-8, CRC32, неизменённые байты', async () => {
   assert.equal(crc32(new TextEncoder().encode('123456789')), 0xcbf43926);
   const bytes = encode(source),

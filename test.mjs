@@ -89,7 +89,7 @@ const request = async (endpoint, body, headers = {}) => {
           headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify(body),
         }
-      : {},
+      : { headers },
   );
   return { status: res.status, data: await res.json() };
 };
@@ -132,6 +132,35 @@ try {
   );
   check((await request('/api/restore', { id: saved.data.backup })).status === 200, 'Откат');
   check(hash(await fs.readFile(path.join(effects, file.name))) === file.hash, 'Откат байт в байт');
+  const webOrigin = 'https://studio.example';
+  check(
+    (await request('/api/web-origin', { origin: webOrigin })).status === 200,
+    'Веб-источник подключается только через локальный помощник',
+  );
+  const preflight = await fetch(url + '/api/save', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: webOrigin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type',
+      'Access-Control-Request-Private-Network': 'true',
+    },
+  });
+  check(
+    preflight.ok &&
+      preflight.headers.get('access-control-allow-origin') === webOrigin &&
+      preflight.headers.get('access-control-allow-private-network') === 'true',
+    'Разрешённый веб-редактор проходит CORS и preflight локальной сети',
+  );
+  check(
+    (await request('/api/catalog', undefined, { Origin: webOrigin })).status === 200,
+    'Разрешённый сайт читает выбранную локальную копию',
+  );
+  check(
+    (await request('/api/web-origin', { origin: 'https://other.example' }, { Origin: webOrigin }))
+      .status === 403,
+    'Веб-сайт не может добавлять новые разрешённые источники',
+  );
   const quickBefore = await fs.readFile(path.join(effects, 'quickitems.ui'));
   const saveSize = async (name, value) => {
     const current = (await request('/api/catalog')).data.files.find((f) => f.name === name);

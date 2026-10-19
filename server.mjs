@@ -23,6 +23,26 @@ try {
 } catch {}
 let client = null;
 const port = Number(arg('--port') || 5189);
+function webOrigin(value) {
+  const url = new URL(value);
+  if (
+    url.username ||
+    url.password ||
+    (url.protocol !== 'https:' &&
+      !(url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)))
+  )
+    throw Error('Для веб-редактора нужен HTTPS или локальный адрес');
+  return url.origin;
+}
+if (arg('--web-origin')) {
+  settings.webOrigins = [
+    ...new Set([...(settings.webOrigins || []), webOrigin(arg('--web-origin'))]),
+  ];
+  await saveSettings();
+}
+const localOrigins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
+const trustedOrigin = (origin) =>
+  localOrigins.has(origin) || (settings.webOrigins || []).includes(origin);
 let effects, backupRoot;
 let names = [];
 let validNames = new Set(names);
@@ -54,11 +74,15 @@ let strings = {};
 let mutation = false;
 async function remember(root) {
   settings = {
+    ...settings,
     lastClient: root,
     recent: [root, ...(Array.isArray(settings.recent) ? settings.recent : [])]
       .filter((v, i, a) => typeof v === 'string' && a.indexOf(v) === i)
       .slice(0, 12),
   };
+  await saveSettings();
+}
+async function saveSettings() {
   await fs.mkdir(path.dirname(settingsPath), { recursive: true });
   await fs.writeFile(settingsPath + '.tmp', JSON.stringify(settings, null, 2));
   await fs.rename(settingsPath + '.tmp', settingsPath);
@@ -419,6 +443,15 @@ async function texture(name) {
 }
 const send = (res, status, data, type = 'application/json; charset=utf-8') => {
   res.writeHead(status, {
+    ...(res.bridgeOrigin
+      ? {
+          'Access-Control-Allow-Origin': res.bridgeOrigin,
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Private-Network': 'true',
+          Vary: 'Origin',
+        }
+      : {}),
     'Content-Type': type,
     'X-Content-Type-Options': 'nosniff',
     'Cache-Control': 'no-store',
@@ -433,12 +466,24 @@ const server = http.createServer(async (req, res) => {
     if (req.headers.host !== `127.0.0.1:${port}` && req.headers.host !== `localhost:${port}`)
       return send(res, 403, { error: 'Локальный доступ' });
     const url = new URL(req.url, origin);
+    if (req.headers.origin && !trustedOrigin(req.headers.origin))
+      return send(res, 403, { error: 'Чужой источник запроса' });
+    if (req.headers.origin && !localOrigins.has(req.headers.origin))
+      res.bridgeOrigin = req.headers.origin;
+    if (req.method === 'OPTIONS') return send(res, 200, { ok: true });
     if (req.method === 'POST') {
-      if (req.headers.origin && ![origin, `http://localhost:${port}`].includes(req.headers.origin))
-        return send(res, 403, { error: 'Чужой источник запроса' });
       if (!req.headers['content-type']?.startsWith('application/json'))
         return send(res, 415, { error: 'Ожидается JSON' });
       const data = await body(req);
+      if (url.pathname === '/api/web-origin') {
+        if (req.headers.origin && !localOrigins.has(req.headers.origin))
+          return send(res, 403, { error: 'Разрешить сайт можно только локально' });
+        settings.webOrigins = [
+          ...new Set([...(settings.webOrigins || []), webOrigin(data.origin)]),
+        ];
+        await saveSettings();
+        return send(res, 200, { webOrigins: settings.webOrigins });
+      }
       if (url.pathname === '/api/client') return send(res, 200, await switchClient(data.path));
       if (url.pathname === '/api/discover') return send(res, 200, await discover(data.path));
       if (url.pathname === '/api/pick-folder') return send(res, 200, await pickFolder());
@@ -465,6 +510,7 @@ const server = http.createServer(async (req, res) => {
         fontsHash: digest(cfg),
         resolution: config ? resolution(decode(config)) : null,
         backups: await backups(),
+        webOrigins: settings.webOrigins || [],
       });
     }
     if (url.pathname === '/api/clients') return send(res, 200, await clients());

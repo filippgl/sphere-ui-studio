@@ -1007,6 +1007,7 @@ function sprite(name) {
 function image(name) {
   if (images.has(name)) return images.get(name);
   const im = new Image();
+  if (storage.mode === 'bridge') im.crossOrigin = 'anonymous';
   images.set(name, im);
   im.onload = paint;
   im.onerror = () => {
@@ -2810,20 +2811,46 @@ $('connect-client').onclick = guarded(async () => {
   toast('Открыта копия: ' + (data.clientLabel || data.client));
 });
 $('client-path').oninput = updateDirty;
-if (storage.mode === 'browser') {
-  $('client-path').hidden = true;
-  $('browser-folder-name').hidden = false;
-  $('storage-description').hidden = false;
-  $('storage-description').textContent = globalThis.showDirectoryPicker
-    ? 'Выберите папку и разрешите запись. Сохранение и резервные копии выполняются на вашем компьютере. Игровые файлы не отправляются на сайт.'
-    : 'Этот браузер открывает папку для редактирования с выгрузкой изменений и бэкапов в ZIP. Для прямой записи используйте Chrome, Edge или локальную версию.';
-  $('import-folder').hidden = !globalThis.showDirectoryPicker;
+function storageControls() {
+  const browser = storage.mode === 'browser';
+  $('client-path').hidden = browser;
+  $('browser-folder-name').hidden = !browser;
+  $('companion-controls').hidden = !storage.web;
+  $('storage-description').hidden = !storage.web;
+  $('storage-description').textContent =
+    storage.mode === 'bridge'
+      ? 'Веб-редактор подключён к локальному помощнику. Ниже показан полный путь выбранной копии игры.'
+      : globalThis.showDirectoryPicker
+        ? 'Выберите папку и разрешите запись. Сохранение и резервные копии выполняются на вашем компьютере. Игровые файлы не отправляются на сайт.'
+        : 'Этот браузер открывает папку для редактирования с выгрузкой изменений и бэкапов в ZIP. Для прямой записи используйте Chrome, Edge или локальную версию.';
+  $('import-folder').hidden = !storage.web;
 }
+storageControls();
+$('connect-companion').onclick = guarded(async () => {
+  const button = $('connect-companion');
+  button.disabled = true;
+  try {
+    await storage.connectCompanion($('companion-url').value);
+    storageControls();
+    const catalog = await api('/api/catalog');
+    $('client-path').value = catalog.client || '';
+    await recentClients();
+    $('discovery-status').textContent =
+      'Помощник подключён. Проверьте путь копии и нажмите «Открыть эту копию».';
+  } catch (error) {
+    $('discovery-status').textContent =
+      `Запустите локальный редактор командой Start-Editor.ps1 -WebOrigin ${location.origin}, затем подключитесь снова.`;
+    throw error;
+  } finally {
+    button.disabled = false;
+  }
+});
 $('import-folder').onclick = () => $('folder-files').click();
 $('folder-files').onchange = guarded(async (event) => {
   if (!event.target.files.length) return;
   if (edits.size && !confirm('Открыть другую папку и убрать несохранённые изменения?')) return;
   await storage.importFiles([...event.target.files]);
+  storageControls();
   edits.clear();
   undo = [];
   redo = [];
@@ -3113,11 +3140,13 @@ async function load(preferred = 'pick_person') {
   $('save').querySelector('span:last-child').textContent =
     data.storageMode === 'download' ? 'Скачать изменения' : 'Сохранить в клиент';
   $('storage-mode').textContent =
-    storage.mode === 'browser'
-      ? data.storageMode === 'download'
-        ? 'Онлайн · выгрузка в ZIP'
-        : 'Онлайн · файлы у вас'
-      : 'Локальный проект';
+    storage.mode === 'bridge'
+      ? 'Веб · локальный помощник'
+      : storage.mode === 'browser'
+        ? data.storageMode === 'download'
+          ? 'Онлайн · выгрузка в ZIP'
+          : 'Онлайн · файлы у вас'
+        : 'Локальный проект';
   images.clear();
   rebuild();
   if (windows.length) choose(windows.find((w) => w.name === preferred) || windows[0], false);

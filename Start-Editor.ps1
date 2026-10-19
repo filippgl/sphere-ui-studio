@@ -1,7 +1,8 @@
 param(
     [string] $Client = '',
     [int] $Port = 5189,
-    [switch] $NoBrowser
+    [switch] $NoBrowser,
+    [string] $WebOrigin = ''
 )
 $ErrorActionPreference = 'Stop'
 $address = "http://127.0.0.1:$Port"
@@ -17,6 +18,7 @@ if (-not $running) {
     $server = Join-Path $PSScriptRoot 'server.mjs'
     $editorArguments = @("`"$server`"", '--port', "$Port")
     if ($Client) { $editorArguments += @('--client', "`"$Client`"") }
+    if ($WebOrigin) { $editorArguments += @('--web-origin', "`"$WebOrigin`"") }
     $editorProcess = Start-Process $node -ArgumentList $editorArguments -WindowStyle Hidden -PassThru -RedirectStandardOutput "$logs\stdout.log" -RedirectStandardError "$logs\stderr.log"
     $editorProcess.Id | Set-Content "$logs\server.pid"
     for ($attempt = 0; $attempt -lt 25; $attempt++) {
@@ -36,4 +38,8 @@ if ($Client -and $info.client -ne $Client) {
 }
 Write-Output $address
 Write-Output $info.client
+if ($WebOrigin -and $info.webOrigins -notcontains $WebOrigin.TrimEnd('/')) {
+    $originBody = @{ origin = $WebOrigin } | ConvertTo-Json -Compress
+    Invoke-RestMethod "$address/api/web-origin" -Method Post -ContentType 'application/json' -Body $originBody | Out-Null
+}
 if (-not $NoBrowser) { Start-Process $address }

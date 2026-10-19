@@ -8,6 +8,13 @@ export async function child(handle, name, kind = 'directory', create = false) {
   try {
     return await handle[method](name, { create: false });
   } catch (error) {
+    if (error instanceof TypeError && /name is not allowed/i.test(error.message)) {
+      const blocked = new Error(
+        `Браузер ограничивает доступ к ${name}. Подключите локальный помощник или откройте папку для выгрузки ZIP.`,
+      );
+      blocked.name = 'BrowserFileRestriction';
+      throw blocked;
+    }
     if (error.name !== 'NotFoundError') throw error;
     const match = (await entries(handle)).find(
       (e) => e.name.toLowerCase() === name.toLowerCase() && e.kind === kind,

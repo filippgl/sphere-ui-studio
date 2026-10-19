@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { decode, parse, walk, prop, applyEdits } from './ui-model.mjs';
 import { crc32 } from './zip.mjs';
 import { readSfn } from './font-core.mjs';
+import { spawn } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const original = process.env.SPHERE_CLIENT || process.argv[2];
@@ -69,7 +70,7 @@ const server = http.createServer(async (req, res) => {
     'Content-Type': type + '; charset=utf-8',
     'Cache-Control': 'no-store',
     'Content-Security-Policy':
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://127.0.0.1:*; connect-src 'self' http://127.0.0.1:*; frame-ancestors 'none'",
   });
   res.end(await fs.readFile(path.join(here, 'dist', name)));
 });
@@ -401,6 +402,97 @@ try {
     fallbackErrors.length === 0,
     'Режим архива работает без ошибок: ' + fallbackErrors.join('; '),
   );
+  if (browserName === 'chromium') {
+    const helper = spawn(
+      process.execPath,
+      [
+        path.join(here, 'server.mjs'),
+        '--port',
+        '5193',
+        '--settings',
+        path.join(fixture, 'helper-settings.json'),
+        '--client',
+        fixture,
+        '--web-origin',
+        new URL(url).origin,
+      ],
+      { cwd: here, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    try {
+      await new Promise((resolve, reject) => {
+        helper.stdout.once('data', resolve);
+        helper.once('error', reject);
+        helper.once('exit', (code) => reject(Error('Helper exited ' + code)));
+      });
+      const bridgeContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+      await bridgeContext.addInitScript(() => {
+        const original = FileSystemDirectoryHandle.prototype.getFileHandle;
+        FileSystemDirectoryHandle.prototype.getFileHandle = function (name, options) {
+          if (/\.cfg$/i.test(name))
+            throw new TypeError(
+              "Failed to execute 'getFileHandle' on 'FileSystemDirectoryHandle': Name is not allowed.",
+            );
+          return original.call(this, name, options);
+        };
+      });
+      const bridge = await bridgeContext.newPage(),
+        bridgeErrors = [];
+      bridge.on('pageerror', (e) => bridgeErrors.push(e.message));
+      await bridge.goto(url);
+      await bridge.locator('#welcome-open').click();
+      await bridge.locator('#companion-url').fill('http://127.0.0.1:5193');
+      await bridge.locator('#connect-companion').click();
+      await bridge.waitForFunction(() =>
+        document.getElementById('discovery-status').textContent.includes('Помощник подключён'),
+      );
+      check(
+        (await bridge.getByLabel('Путь к папке игры', { exact: true }).inputValue()) ===
+          (await fs.realpath(fixture)),
+        'Помощник показывает полный путь фактической локальной копии',
+      );
+      await bridge.locator('#connect-client').click();
+      await bridge.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
+      check(
+        (await bridge.locator('#storage-mode').textContent()).includes('локальный помощник'),
+        'Веб-редактор явно показывает подключение к локальному помощнику',
+      );
+      await bridge.locator('#scale-open').click();
+      await bridge.locator('#scale').selectOption('1.5');
+      await bridge.locator('#scale-window').click();
+      await bridge.locator('#save').click();
+      await bridge.waitForFunction(
+        () => document.getElementById('dirty').textContent === 'Нет изменений',
+      );
+      check(
+        decode(await fs.readFile(path.join(fixture, 'fonts.cfg'))).includes('studio_f3_1500'),
+        'Через сайт записан fonts.cfg даже при запрете CFG в браузерном файловом API',
+      );
+      check(
+        !before.equals(await fs.readFile(path.join(fixture, 'effects/pickpers.ui'))),
+        'Сайт через помощник меняет реальные файлы временной копии на диске',
+      );
+      await bridge.locator('#history').click();
+      await bridge.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+      await bridge.waitForFunction(() => !document.getElementById('backup-dialog').open);
+      check(
+        before.equals(await fs.readFile(path.join(fixture, 'effects/pickpers.ui'))),
+        'История через помощник восстанавливает точные исходные байты',
+      );
+      await bridge.reload();
+      await bridge.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
+      check(
+        (await bridge.locator('#storage-mode').textContent()).includes('локальный помощник'),
+        'Подключение к помощнику сохраняется после перезагрузки страницы',
+      );
+      check(
+        bridgeErrors.length === 0,
+        'Режим помощника работает без ошибок JavaScript: ' + bridgeErrors.join('; '),
+      );
+      await bridgeContext.close();
+    } finally {
+      helper.kill();
+    }
+  }
   console.log(`PASS: ${checks} online checks (${browserName}); fixture ${fixture}`);
 } finally {
   await browser?.close();
