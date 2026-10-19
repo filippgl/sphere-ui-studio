@@ -430,7 +430,8 @@ function edit(n, key, text, file = active.file, occurrence = 0) {
   const p = get(n, key, occurrence);
   if (!p) return;
   const k = keyFor(file, p);
-  if (String(text) === p.value) edits.delete(k);
+  const words = (v) => String(v).trim().split(/\s+/).join(' ');
+  if (words(text) === words(p.value)) edits.delete(k);
   else
     edits.set(k, {
       file: file.name,
