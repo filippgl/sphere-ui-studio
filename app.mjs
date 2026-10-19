@@ -374,9 +374,12 @@ function layerStates() {
 }
 function updateDirty() {
   const files = new Set([...edits.values()].map((e) => e.file));
-  const game = Object.keys(gameChanges()).map((key) =>
-    key === 'chatFonts' ? 'config.cfg' : 'mbc\\st_map.mbc',
-  );
+  const labels = {
+    chatFonts: 'config.cfg',
+    mapScales: 'mbc\\st_map.mbc',
+    iconScale: 'иконки предметов',
+  };
+  const game = Object.keys(gameChanges()).map((key) => labels[key]);
   $('dirty').textContent =
     files.size || game.length ? `Изменено файлов: ${files.size + game.length}` : 'Нет изменений';
   $('dirty').classList.toggle('changed', !!(files.size || game.length));
@@ -509,6 +512,15 @@ function windowScale(w, node = w.node) {
 }
 // Game files that follow the windows: the chat font in config.cfg (_main.mbc ignores the .ui
 // font of chat_st2) and marker positions in mbc\st_map.mbc. Only differences are returned.
+// Item pictures are shared by every slot, so their scale is one client-wide setting.
+let iconScaleTarget = null;
+function setIconScale(scale) {
+  iconScaleTarget = scale;
+  const label = `${Math.round(scale * 100)}%`;
+  if (![...$('icon-scale').options].some((o) => Number(o.value) === scale))
+    $('icon-scale').append(new Option(label, scale));
+  $('icon-scale').value = String(scale);
+}
 function gameChanges() {
   const game = {};
   const chat = windows.find((w) => w.name === 'chat_st2');
@@ -525,6 +537,8 @@ function gameChanges() {
         game.chatFonts = fonts;
     } catch {}
   }
+  if (data && iconScaleTarget !== null && Math.abs(iconScaleTarget - data.iconScale) > 0.001)
+    game.iconScale = iconScaleTarget;
   if (data?.mapScales) {
     const scales = {};
     for (const name of Object.keys(data.mapScales)) {
@@ -2488,6 +2502,10 @@ $('reset').onclick = () => {
   updateDirty();
   fit();
 };
+$('icon-scale').onchange = () => {
+  iconScaleTarget = Number($('icon-scale').value);
+  updateDirty();
+};
 $('scale-window').onclick = guarded(() => {
   if (!active) return;
   snapshot();
@@ -2627,6 +2645,7 @@ $('save').onclick = guarded(async () => {
     if (result.fontsHash) data.fontsHash = result.fontsHash;
     if (result.chatFonts) data.chatFonts = result.chatFonts;
     if ('mapScales' in result) data.mapScales = result.mapScales;
+    if ('iconScale' in result) data.iconScale = result.iconScale;
     fontPlans = [];
     edits.clear();
     undo = [];
@@ -3260,6 +3279,7 @@ new ResizeObserver(() => {
 async function load(preferred = 'pick_person') {
   data = await api('/api/catalog');
   fontPlans = [];
+  setIconScale(data.iconScale ?? 1);
   if (data.resolution) {
     const label = data.resolution.join(' × ');
     if (![...$('resolution').options].some((o) => o.value === label))

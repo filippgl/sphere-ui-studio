@@ -1,5 +1,6 @@
 import { decode, encode } from './ui-core.mjs';
 import mapRecipes from './map-recipe.mjs';
+import { prepareIcons } from './icons-core.mjs';
 
 // Game scripts that ignore the .ui files: the chat font comes from config.cfg and the map
 // markers from mbc\st_map.mbc. The editor keeps both in step with the scaled windows.
@@ -94,7 +95,8 @@ export const mapScriptName = 'st_map.mbc';
 
 // Assets for one save. read(scope, name) returns the file bytes or null. `game` comes from the
 // page: { chatFonts: { list, edit }, mapScales: { minimap, bigmap } }, both optional.
-export async function prepareGameAssets(game = {}, read, definitions = []) {
+// io (icons only): { list(scope) -> names, uiTexts: [.ui sources] }.
+export async function prepareGameAssets(game = {}, read, definitions = [], io = {}) {
   const assets = [],
     warnings = [];
   if (game.chatFonts) {
@@ -119,6 +121,7 @@ export async function prepareGameAssets(game = {}, read, definitions = []) {
         assets.push({ scope: 'mbc', name: mapScriptName, after });
     }
   }
+  if (game.iconScale) assets.push(...(await prepareIcons(game.iconScale, { ...io, read })).assets);
   return { assets, warnings };
 }
 // Scales the current script was built for: 1 for the original, null for an unknown version.

@@ -107,6 +107,8 @@ export function validAsset(item) {
   return (
     (item.scope === 'root' && ['fonts.cfg', 'config.cfg'].includes(item.name)) ||
     (item.scope === 'mbc' && item.name === 'st_map.mbc') ||
+    (item.scope === 'textures' && /^[\w-]+\.dds$/i.test(item.name)) ||
+    (item.scope === '_interface-editor-icons' && /^[\w-]+\.(?:dds|json)$/i.test(item.name)) ||
     (['effects', 'xadd'].includes(item.scope) &&
       /^studio_f\d+_\d+(?:_(?:d|f|i|p|spa))?\.(?:sfn|dds)$/i.test(item.name) &&
       item.name.toLowerCase().endsWith(item.scope === 'effects' ? '.sfn' : '.dds'))

@@ -20,6 +20,7 @@ const files = [
   'hotbar-core.mjs',
   'font-core.mjs',
   'game-core.mjs',
+  'icons-core.mjs',
   'map-recipe.mjs',
   'history-core.mjs',
   'zip.mjs',

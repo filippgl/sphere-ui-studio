@@ -16,6 +16,14 @@ import {
   patchMapScript,
   mapScriptScales,
 } from './game-core.mjs';
+import {
+  scaleIcon,
+  isIcon,
+  spriteTextures,
+  prepareIcons,
+  currentIconScale,
+  iconStore,
+} from './icons-core.mjs';
 import { planHotbar, planHotbarEffects, hotbarInfo } from './hotbar-core.mjs';
 import { captureScaleBase, scaleSource } from './ui-core.mjs';
 import assert from 'node:assert/strict';
@@ -587,4 +595,54 @@ test('Шрифты чата в config.cfg меняются на месте, а �
   assert.deepEqual([...(await originalMapScript(patched, recipe))], [...source]);
   assert.deepEqual(await mapScriptScales(source, recipe), { minimap: 1, bigmap: 1 });
   assert.equal(await mapScriptScales(encode('другой скрипт'), recipe), null);
+});
+test('Иконки предметов увеличиваются от оригиналов и возвращаются к ним при 100%', async () => {
+  const dds = (size) => {
+      const bytes = new Uint8Array(128 + size * size * 4).fill(200, 128),
+        view = new DataView(bytes.buffer);
+      bytes.set([68, 68, 83, 32]);
+      for (const [offset, value] of [
+        [4, 124],
+        [8, 0x100f],
+        [12, size],
+        [16, size],
+        [20, size * 4],
+        [76, 32],
+        [80, 0x41],
+        [88, 32],
+        [92, 0xff0000],
+        [96, 0xff00],
+        [100, 0xff],
+        [104, 0xff000000],
+      ])
+        view.setUint32(offset, value, true);
+      return bytes;
+    },
+    icon = dds(32),
+    files = new Map([
+      ['textures/ar_ring.dds', icon],
+      ['textures/frame.dds', icon],
+      ['textures/big.dds', dds(64)],
+    ]),
+    io = {
+      read: async (scope, name) => files.get(`${scope}/${name}`) ?? null,
+      list: async (scope) =>
+        [...files.keys()].filter((k) => k.startsWith(scope + '/')).map((k) => k.split('/')[1]),
+      uiTexts: ['sprite\n{\n texture "frame" 0 0 32 32 0 0 32 32\n}'],
+    },
+    apply = (assets) => assets.forEach((a) => files.set(`${a.scope}/${a.name}`, a.after));
+  assert.equal(isIcon(icon), true);
+  assert.equal(isIcon(files.get('textures/big.dds')), false);
+  assert.deepEqual([...spriteTextures(io.uiTexts)], ['frame']);
+  assert.equal(await currentIconScale(io.read), 1);
+  apply((await prepareIcons(1.5, io)).assets);
+  assert.equal(await currentIconScale(io.read), 1.5);
+  assert.equal(rgbaFromDds(files.get('textures/ar_ring.dds')).width, 48);
+  assert.equal(rgbaFromDds(files.get('textures/frame.dds')).width, 32);
+  assert.equal(files.get(`${iconStore}/ar_ring.dds`), icon);
+  apply((await prepareIcons(2, io)).assets);
+  assert.equal(rgbaFromDds(files.get('textures/ar_ring.dds')).width, 64);
+  apply((await prepareIcons(1, io)).assets);
+  assert.equal(files.get('textures/ar_ring.dds'), icon);
+  assert.equal(await currentIconScale(io.read), 1);
 });

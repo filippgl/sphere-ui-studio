@@ -9,6 +9,7 @@ import { decode, encode, hash, parse, walk, value, unquote, applyEdits } from '.
 import { rgbaFromDds, png } from './dds.mjs';
 import { resolution } from './layout-core.mjs';
 import { prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
+import { currentIconScale } from './icons-core.mjs';
 import {
   prepareGameAssets,
   configChatFonts,
@@ -299,6 +300,20 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
       game,
       (scope, name) => optionalRead(assetPath({ scope, name })),
       generated.definitions,
+      {
+        list: async (scope) => {
+          try {
+            return await fs.readdir(path.join(client, scope));
+          } catch {
+            return [];
+          }
+        },
+        uiTexts: game?.iconScale
+          ? await Promise.all(
+              names.map(async (n) => decode(await fs.readFile(path.join(effects, n)))),
+            )
+          : [],
+      },
     );
     for (const asset of [...generated.assets, ...extra.assets]) {
       const before = await optionalRead(assetPath(asset));
@@ -363,6 +378,7 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
       fontsHash: digest(await optionalRead(path.join(client, 'fonts.cfg'))),
       chatFonts: configChatFonts(await optionalRead(path.join(client, 'config.cfg'))),
       mapScales: await mapScriptScales(await optionalRead(path.join(client, 'mbc', mapScriptName))),
+      iconScale: await currentIconScale((scope, name) => optionalRead(assetPath({ scope, name }))),
       warnings: extra.warnings,
     };
   } finally {
@@ -528,6 +544,9 @@ const server = http.createServer(async (req, res) => {
         mapScales: client
           ? await mapScriptScales(await optionalRead(path.join(client, 'mbc', mapScriptName)))
           : null,
+        iconScale: client
+          ? await currentIconScale((scope, name) => optionalRead(assetPath({ scope, name })))
+          : 1,
         backups: await backups(),
         webOrigins: settings.webOrigins || [],
       });

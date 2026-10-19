@@ -4,6 +4,7 @@ import { entries, child, read, write, permission, UploadedDirectory } from './br
 import { zip, download } from './zip.mjs';
 import { resolution } from './layout-core.mjs';
 import { fontDefinitions, prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
+import { currentIconScale } from './icons-core.mjs';
 import { backupId, historyEntries, restorePlan } from './history-core.mjs';
 import {
   prepareGameAssets,
@@ -217,6 +218,7 @@ export class BrowserStorage {
       ),
       chatFonts: configChatFonts(await this.viewRead({ scope: 'root', name: 'config.cfg' })),
       mapScales: await mapScriptScales(await this.viewRead({ scope: 'mbc', name: mapScriptName })),
+      iconScale: await currentIconScale((scope, name) => this.viewRead({ scope, name })),
       restricted: [...this.restricted],
       backups: await this.backups(),
       storageMode: current.downloadOnly ? 'download' : 'browser',
@@ -365,6 +367,22 @@ export class BrowserStorage {
         game,
         (scope, name) => this.optionalRead({ scope, name }),
         generated.definitions,
+        {
+          list: async (scope) => {
+            try {
+              return (await entries(await child(current.handle, scope)))
+                .filter((e) => e.kind === 'file')
+                .map((e) => e.name);
+            } catch {
+              return [];
+            }
+          },
+          uiTexts: game?.iconScale
+            ? await Promise.all(
+                [...this.names].map(async (n) => decode(await read(this.effects, n))),
+              )
+            : [],
+        },
       );
       for (const asset of [...generated.assets, ...extra.assets]) {
         const before = await this.optionalRead(asset),
@@ -441,6 +459,7 @@ export class BrowserStorage {
         mapScales: await mapScriptScales(
           await this.viewRead({ scope: 'mbc', name: mapScriptName }),
         ),
+        iconScale: await currentIconScale((scope, name) => this.viewRead({ scope, name })),
         warnings: extra.warnings,
         downloadOnly: current.downloadOnly,
       };
