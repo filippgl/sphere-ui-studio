@@ -51,6 +51,7 @@ export class BrowserStorage {
   current = null;
   names = new Set();
   fonts = [];
+  restricted = new Set();
   strings = {};
   imageCache = new Map();
   busy = false;
@@ -149,12 +150,15 @@ export class BrowserStorage {
         ))
           strings[m[1]] = m[2];
       } catch {}
+      const restricted = new Set();
       try {
         for (const m of decode(await read(record.handle, 'fonts.cfg')).matchAll(
           /^\s*NEW_FONT_(\d+)\s+"([^"]+)"[^\r\n]*?(?:\/\/\s*([^\r\n]+))?$/gm,
         ))
           fonts.push({ id: Number(m[1]) + 2, asset: m[2], name: m[3]?.trim() || m[2] });
-      } catch {}
+      } catch (error) {
+        if (error.name === 'BrowserFileRestriction') restricted.add('fonts.cfg');
+      }
       for (const font of fonts)
         if (font.asset) {
           try {
@@ -168,6 +172,7 @@ export class BrowserStorage {
       this.names = new Set(names);
       this.strings = strings;
       this.fonts = fonts;
+      this.restricted = restricted;
       record.opened = true;
       await this.remember(record);
       return { client: id };
@@ -200,12 +205,11 @@ export class BrowserStorage {
       files,
       strings: this.strings,
       fonts: this.fonts,
-      fontsHash: await this.digest(await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })),
+      fontsHash: await this.digest(await this.viewRead({ scope: 'root', name: 'fonts.cfg' })),
       resolution: resolution(
-        decode(
-          (await this.optionalRead({ scope: 'root', name: 'config.cfg' })) || new Uint8Array(),
-        ),
+        decode((await this.viewRead({ scope: 'root', name: 'config.cfg' })) || new Uint8Array()),
       ),
+      restricted: [...this.restricted],
       backups: await this.backups(),
       storageMode: current.downloadOnly ? 'download' : 'browser',
     };
@@ -262,6 +266,16 @@ export class BrowserStorage {
       throw error;
     }
   }
+  // Chromium refuses some names (*.cfg on Windows); the windows still open without them.
+  async viewRead(item) {
+    try {
+      return await this.optionalRead(item);
+    } catch (error) {
+      if (error.name !== 'BrowserFileRestriction') throw error;
+      this.restricted.add(item.name);
+      return null;
+    }
+  }
   async digest(bytes) {
     return bytes === null ? null : sha256(bytes);
   }
@@ -280,7 +294,7 @@ export class BrowserStorage {
       { id: 0, name: 'Классический малый' },
       { id: 1, name: 'Классический крупный' },
       ...fontDefinitions(
-        decode((await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })) || new Uint8Array()),
+        decode((await this.viewRead({ scope: 'root', name: 'fonts.cfg' })) || new Uint8Array()),
       ),
     ];
     for (const font of this.fonts)
@@ -301,7 +315,9 @@ export class BrowserStorage {
       )
         throw Error('Нет изменений или файлы повторяются');
       const changes = [];
-      const cfg = await this.optionalRead({ scope: 'root', name: 'fonts.cfg' });
+      const cfg = fontScales.length
+        ? await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })
+        : null;
       if (fontScales.length && (await this.digest(cfg)) !== fontsHash)
         throw Error('fonts.cfg изменился. Перечитайте папку');
       const generated = fontScales.length
@@ -406,7 +422,7 @@ export class BrowserStorage {
         backup: id,
         files: await Promise.all(changes.filter((c) => !c.scope).map((c) => this.getFile(c.name))),
         fonts: this.fonts,
-        fontsHash: await this.digest(await this.optionalRead({ scope: 'root', name: 'fonts.cfg' })),
+        fontsHash: await this.digest(await this.viewRead({ scope: 'root', name: 'fonts.cfg' })),
         downloadOnly: current.downloadOnly,
       };
     });

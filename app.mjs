@@ -3166,5 +3166,10 @@ async function load(preferred = 'pick_person') {
     paint();
   }
   updateDirty();
+  if (data.restricted?.length)
+    toast(
+      `Браузер не открывает ${data.restricted.join(', ')}. Окна доступны; разрешение экрана укажите вручную. Для правки шрифтов подключите локальный помощник или откройте папку для выгрузки ZIP.`,
+      true,
+    );
 }
 guarded(load)();

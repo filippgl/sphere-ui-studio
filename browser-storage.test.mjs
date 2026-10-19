@@ -161,8 +161,8 @@ test('Отказ в разрешении и смена выбранной пап
   );
   assert.equal(decode(await read(effects, 'first.ui')), source);
 });
-test('Ограничение Windows Chromium на CFG объясняется с указанием файла и доступных режимов', async () => {
-  const { root, store } = await fixture();
+test('Запрет Windows Chromium на CFG не мешает открыть и сохранить окна', async () => {
+  const { root, store, record } = await fixture();
   const original = root.getFileHandle.bind(root);
   root.getFileHandle = async (name, options) => {
     if (name.endsWith('.cfg'))
@@ -171,8 +171,16 @@ test('Ограничение Windows Chromium на CFG объясняется с
       );
     return original(name, options);
   };
+  await store.select(record.id);
+  const before = await store.catalog();
+  assert.equal(before.files.length, 2);
+  assert.deepEqual(before.restricted.sort(), ['config.cfg', 'fonts.cfg']);
+  assert.equal(before.resolution, null);
+  const saved = await store.save([patch(before.files[0])]);
+  assert.match(decode(await read(await child(root, 'effects'), 'first.ui')), /size 300 150/);
+  assert.equal(saved.fontsHash, null);
   await assert.rejects(
-    store.catalog(),
+    read(root, 'fonts.cfg'),
     (error) =>
       error.name === 'BrowserFileRestriction' &&
       /fonts.cfg/.test(error.message) &&
