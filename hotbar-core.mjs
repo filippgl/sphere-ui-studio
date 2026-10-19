@@ -35,6 +35,7 @@ export function planHotbar(root, horizontal, read = raw, extraCoords = []) {
     };
   };
   let legacy = false;
+  let damaged = false;
   if (info.horizontal && background) {
     const tokens = read(background, 'texture').match(/"[^"]*"|\S+/g);
     if (tokens?.length === 9) {
@@ -49,22 +50,32 @@ export function planHotbar(root, horizontal, read = raw, extraCoords = []) {
       legacy = area < 0;
     }
   }
+  if (!info.horizontal && background) {
+    const tokens = read(background, 'texture').match(/"[^"]*"|\S+/g);
+    if (tokens?.length === 9) {
+      const { points } = coords(0, ...tokens.slice(1, 5).map(Number));
+      damaged = points[0] === points[2] && points[1] !== points[3];
+    }
+  }
   const mirror = info.horizontal && horizontal && legacy;
-  if (info.horizontal === horizontal && !mirror) return [];
+  const repairOnly = !info.horizontal && !horizontal && damaged;
+  if (info.horizontal === horizontal && !mirror && !repairOnly) return [];
   const edits = [];
   const patch = (node, key, value, occurrence = 0) =>
     edits.push({ node, key, value: Array.isArray(value) ? value.join(' ') : value, occurrence });
-  if (!mirror) patch(root, 'size', [height, width]);
+  if (!mirror && !repairOnly) patch(root, 'size', [height, width]);
   const effects = horizontal
     ? { MOVE_LEFT: 'MOVE_BOTTOM', MOVE_RIGHT: 'MOVE_TOP' }
     : legacy
       ? { MOVE_TOP: 'MOVE_LEFT', MOVE_BOTTOM: 'MOVE_RIGHT' }
       : { MOVE_BOTTOM: 'MOVE_LEFT', MOVE_TOP: 'MOVE_RIGHT' };
   for (const key of ['showEffect', 'hideEffect']) {
+    if (repairOnly) continue;
     const tokens = read(root, key).trim().split(/\s+/);
     if (effects[tokens[0]]) patch(root, key, [effects[tokens[0]], ...tokens.slice(1)].join(' '));
   }
   for (const node of root.children.filter((n) => n.kind === 'control')) {
+    if (repairOnly) continue;
     const position = read(node, 'position').trim().split(/\s+/).map(Number);
     const [w, h] = read(node, 'size', '0 0').trim().split(/\s+/).map(Number);
     const [x, y] = position;
@@ -84,29 +95,37 @@ export function planHotbar(root, horizontal, read = raw, extraCoords = []) {
     // SLOT and button sizes, textures, glyphs and item orientation remain unchanged.
   }
   if (background) {
-    if (!mirror) patch(background, 'size', read(background, 'size').trim().split(/\s+/).reverse());
+    if (!mirror && !repairOnly)
+      patch(background, 'size', read(background, 'size').trim().split(/\s+/).reverse());
     for (const [index, field] of background.props
       .filter((p) => p.key.toLowerCase() === 'texture')
       .entries()) {
       const tokens = read(background, 'texture', field.value, index).match(/"[^"]*"|\S+/g);
       if (tokens?.length !== 9) throw Error('Неизвестный формат рамки панели хоткеев');
       const [sx, sy, ex, ey, dx, dy, dex, dey] = tokens.slice(1).map(Number);
-      const rect = mirror
-        ? [dx, height - dey, dex, height - dy]
-        : horizontal
-          ? [dy, width - dex, dey, width - dx]
-          : legacy
-            ? [dy, dx, dey, dex]
-            : [height - dey, dx, height - dy, dex];
+      const rect = repairOnly
+        ? [dx, dy, dex, dey]
+        : mirror
+          ? [dx, height - dey, dex, height - dy]
+          : horizontal
+            ? [dy, width - dex, dey, width - dx]
+            : legacy
+              ? [dy, dx, dey, dex]
+              : [height - dey, dx, height - dy, dex];
       patch(background, 'texture', [tokens[0], sx, sy, ex, ey, ...rect].join(' '), index);
-      const { occurrence, points } = coords(index, sx, sy, ex, ey);
-      const order = mirror
-        ? [3, 2, 1, 0]
-        : horizontal
-          ? [1, 2, 3, 0]
-          : legacy
-            ? [0, 3, 2, 1]
-            : [3, 0, 1, 2];
+      const { occurrence } = coords(index, sx, sy, ex, ey);
+      const points = damaged
+        ? [sx, sy, ex, sy, ex, ey, sx, ey]
+        : coords(index, sx, sy, ex, ey).points;
+      const order = repairOnly
+        ? [0, 1, 2, 3]
+        : mirror
+          ? [3, 2, 1, 0]
+          : horizontal
+            ? [1, 2, 3, 0]
+            : legacy
+              ? [0, 3, 2, 1]
+              : [3, 0, 1, 2];
       const transposed = [index, ...order.flatMap((i) => points.slice(i * 2, i * 2 + 2))].join(' ');
       edits.push({
         node: background,

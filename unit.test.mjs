@@ -3,6 +3,7 @@ import { anchors, placement, fitPlacement, overflow, resolution } from './layout
 import { scaleSfn, readSfn } from './font-core.mjs';
 import { chatInfo, planChat } from './chat-core.mjs';
 import { planHotbar, hotbarInfo } from './hotbar-core.mjs';
+import { captureScaleBase, scaleSource } from './ui-core.mjs';
 import assert from 'node:assert/strict';
 import { inflateSync } from 'node:zlib';
 import { decode, encode, parse, walk, prop, applyEdits } from './ui-model.mjs';
@@ -389,4 +390,108 @@ test('Нижняя привязка вставляется только в ок�
     /вставка/,
   );
   assert.throws(() => applyEdits(hotbarFixture, [insertion, insertion]), /вставка/);
+});
+test('Исходный масштаб переживает сохранение, поворот и смену смещений без накопления', () => {
+  const root = parse(hotbarFixture).children[0],
+    base = captureScaleBase(root);
+  const baseEdit = {
+    insert: 'scaleBase',
+    node: root.id,
+    start: root.closeStart,
+    end: root.closeStart,
+    value: JSON.stringify(base),
+  };
+  const horizontal = applyEdits(hotbarFixture, [...layoutEdits(planHotbar(root, true)), baseEdit]);
+  assert.ok(
+    horizontal
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('// sphere-ui-studio-scale'))
+      .every((line) => line.length < 200),
+  );
+  const reopened = parse(horizontal).children[0];
+  assert.equal(prop(reopened, 'size').value, '253 26');
+  assert.equal(prop(scaleSource(reopened), 'size').value, '26 253');
+  assert.equal(
+    walk(scaleSource(reopened))
+      .flatMap((n) => n.props)
+      .filter((p) => p.key === 'tcoords').length,
+    0,
+  );
+  assert.deepEqual(reopened.scaleBase, base);
+  const span = reopened.scaleBaseSpan;
+  const replaced = applyEdits(horizontal, [{ ...baseEdit, start: span.start, end: span.end }]);
+  assert.equal(replaced, horizontal);
+  assert.equal((replaced.match(/sphere-ui-studio-scale-v1/g) || []).length, 1);
+  assert.deepEqual(
+    walk(reopened).map((n) => n.id),
+    walk(root).map((n) => n.id),
+  );
+  for (const invalid of [
+    { version: 9, fields: [] },
+    { version: 1, fields: [{ node: 'root/999', key: 'size', occurrence: 0, value: '1 2' }] },
+    { version: 1, fields: [...base.fields, base.fields[0]] },
+  ])
+    assert.throws(
+      () => applyEdits(hotbarFixture, [{ ...baseEdit, value: JSON.stringify(invalid) }]),
+      /геометрия/,
+    );
+  assert.throws(() => applyEdits(hotbarFixture, [{ ...baseEdit, start: 0, end: 0 }]), /масштаба/);
+  assert.throws(
+    () =>
+      parse(
+        horizontal.replace(/sphere-ui-studio-scale-v1 [^\n]+/, 'sphere-ui-studio-scale-v1 invalid'),
+      ),
+    /геометрия/,
+  );
+});
+test('База масштаба сохраняет CRLF и работает в общем файле спрайтов без окна', () => {
+  const text =
+    'spritesDef\r\n{\r\nsprite\r\n{\r\nname "frame"\r\nsize 26 253\r\ntexture "atlas" 205 0 231 253 0 0 26 253\r\n}\r\n}';
+  const root = parse(text);
+  const saved = applyEdits(text, [
+    {
+      insert: 'scaleBase',
+      node: root.id,
+      start: root.closeStart,
+      end: root.closeStart,
+      value: JSON.stringify(captureScaleBase(root)),
+    },
+  ]);
+  assert.ok(saved.startsWith(text + '\r\n// sphere-ui-studio-scale-v1 '));
+  assert.equal(saved.replaceAll('\r\n', '').includes('\n'), false);
+  const loaded = parse(saved);
+  assert.equal(
+    prop(
+      walk(scaleSource(loaded)).find((n) => n.kind === 'sprite'),
+      'size',
+    ).value,
+    '26 253',
+  );
+});
+test('Ранее повреждённая масштабом рамка восстанавливается без второго поворота UV', () => {
+  const broken = hotbarFixture.replace(
+    'texture "atlas" 205 0 231 253 0 0 26 253',
+    'texture "atlas" 205 0 231 253 0 0 26 253\ntcoords 0 231 0 231 253 205 253 205 0',
+  );
+  const root = parse(broken).children[0];
+  const repaired = parse(applyEdits(broken, layoutEdits(planHotbar(root, true)))).children[0];
+  const frame = walk(repaired).find((n) => n.kind === 'sprite');
+  assert.equal(prop(frame, 'tcoords').value, '0 231 0 231 253 205 253 205 0');
+  assert.equal(prop(frame, 'size').value, '253 26');
+  const vertical = parse(applyEdits(broken, layoutEdits(planHotbar(root, false)))).children[0];
+  assert.equal(prop(vertical, 'size').value, '26 253');
+  assert.equal(
+    prop(
+      walk(vertical).find((n) => n.kind === 'sprite'),
+      'tcoords',
+    ).value,
+    '0 205 0 231 0 231 253 205 253',
+  );
+  assert.equal(
+    prop(
+      vertical.children.find((n) => prop(n, 'classID')?.value === 'SLOT'),
+      'position',
+    ).value,
+    '5 30',
+  );
 });

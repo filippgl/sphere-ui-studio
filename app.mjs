@@ -3,6 +3,7 @@ import { anchors, placement, fitPlacement, overflow } from './layout-core.mjs';
 import { fontAlias } from './font-core.mjs';
 import { chatInfo, planChat } from './chat-core.mjs';
 import { hotbarInfo, planHotbar } from './hotbar-core.mjs';
+import { scaleSource, captureScaleBase, validateScaleBase } from './ui-core.mjs';
 const storage = await createStorage();
 let fontPlans = [];
 const $ = (id) => document.getElementById(id);
@@ -460,6 +461,35 @@ function editAnchor(node, text, file = active.file) {
     end: start,
     value: text,
   });
+}
+function editScaleBase(node, base, file = active.file) {
+  validateScaleBase(base, node);
+  const start = node.scaleBaseSpan?.start ?? node.closeStart;
+  const end = node.scaleBaseSpan?.end ?? start;
+  edits.set(`${file.name}:${start}:scaleBase`, {
+    file: file.name,
+    node: node.id,
+    key: 'scaleBase',
+    insert: 'scaleBase',
+    start,
+    end,
+    value: JSON.stringify(base),
+  });
+}
+function originalScaleSource(w) {
+  const pending = [...edits.values()].find(
+    (e) => e.insert === 'scaleBase' && e.file === w.file.name && e.node === w.node.id,
+  );
+  return scaleSource(pending ? { ...w.node, scaleBase: JSON.parse(pending.value) } : w.node);
+}
+function rememberScaleBase(w, source) {
+  if (
+    !w.node.scaleBase &&
+    ![...edits.values()].some(
+      (e) => e.insert === 'scaleBase' && e.file === w.file.name && e.node === w.node.id,
+    )
+  )
+    editScaleBase(w.node, captureScaleBase(source), w.file);
 }
 function editCoords(node, text, file = active.file) {
   const index = Number(text.split(/\s+/)[0]),
@@ -1953,7 +1983,33 @@ function scaledFont(id, factor) {
   return next;
 }
 function scaleWindow(w, factor, fromCurrent = false) {
-  const current = (p) => (fromCurrent ? (edits.get(keyFor(w.file, p))?.value ?? p.value) : p.value);
+  const source = originalScaleSource(w);
+  const basis = new Map(
+    walk(source)
+      .flatMap((n) => n.props)
+      .map((p) => [p.start, p.value]),
+  );
+  const live = (p) => edits.get(keyFor(w.file, p))?.value ?? p.value;
+  const read = (n, key, fallback = '', occurrence = 0) => {
+    const p = get(n, key, occurrence);
+    return p ? live(p) : fallback;
+  };
+  const extraCoords = [...edits.values()].filter((e) => e.insert && e.file === w.file.name);
+  const hotbar = hotbarInfo(w.node, read);
+  if (!fromCurrent && hotbar) {
+    // Rebase the original geometry into the selected orientation, never restore vertical
+    // destinations while keeping horizontal UVs. Also repair legacy horizontal frames.
+    for (const p of planHotbar(w.node, hotbar.horizontal, read, extraCoords))
+      p.insert
+        ? editCoords(p.node, p.value, w.file)
+        : edit(p.node, p.key, p.value, w.file, p.occurrence);
+    for (const p of planHotbar(source, hotbar.horizontal)) {
+      if (p.insert || p.key.toLowerCase() === 'tcoords') continue;
+      const field = get(p.node, p.key, p.occurrence);
+      if (field) basis.set(field.start, p.value);
+    }
+  }
+  const current = (p) => (fromCurrent ? live(p) : (basis.get(p.start) ?? p.value));
   const rootSize = get(w.node, 'size'),
     rootPosition = get(w.node, 'position');
   const fontFields = walk(w.node)
@@ -2039,7 +2095,7 @@ function scaleWindow(w, factor, fromCurrent = false) {
           ...tokens.slice(2).map((x) => Math.round(Number(x) * factor)),
         ].join(' ');
       }
-      if (p === rootPosition) v = original; // Preserve the margin from the native screen anchor.
+      if (p === rootPosition) v = live(p); // Keep docking and the user's margin from the anchor.
       if (v && !v.includes('NaN')) {
         const k = keyFor(w.file, p);
         if (v === p.value) edits.delete(k);
@@ -2055,6 +2111,7 @@ function scaleWindow(w, factor, fromCurrent = false) {
       }
     }
   if (rootSize) constrainWindow(w);
+  rememberScaleBase(w, source);
 }
 
 function navTab(name) {
@@ -2195,7 +2252,19 @@ $('fit').onclick = () => fit();
 $('selection-focus').onclick = focusSelection;
 $('main-menu').onclick = () => popup('main-popup', $('main-menu'));
 $('view-open').onclick = () => popup('view-popup', $('view-open'));
-$('scale-open').onclick = () => popup('scale-popup', $('scale-open'));
+$('scale-open').onclick = () => {
+  if (active) {
+    const source = originalScaleSource(active);
+    const base = get(source, 'size')?.value.trim().split(/\s+/).map(Number);
+    if (base) {
+      if (hotbarInfo(source)?.horizontal !== hotbarInfo(active.node, readLayout)?.horizontal)
+        base.reverse();
+      $('scale-basis').textContent =
+        `100%: ${base.join(' × ')} px. Процент считается от этой базы, в том числе после сохранения.`;
+    }
+  }
+  popup('scale-popup', $('scale-open'));
+};
 $('zoom-label').onclick = () => popup('zoom-popup', $('zoom-label'));
 $('zoom-fit').onclick = () => {
   fit();
@@ -2308,10 +2377,21 @@ $('scale-text').onclick = guarded(() => {
   if (!active) return;
   snapshot();
   const factor = Number($('scale').value);
+  const source = originalScaleSource(active);
+  const basis = new Map(
+    walk(source)
+      .flatMap((n) => n.props)
+      .map((p) => [p.start, p.value]),
+  );
   for (const node of walk(active.node))
     for (const field of node.props)
       if (field.key.toLowerCase() === 'font')
-        edit(node, field.key, String(scaledFont(Number(field.value), factor)));
+        edit(
+          node,
+          field.key,
+          String(scaledFont(Number(basis.get(field.start) ?? field.value), factor)),
+        );
+  rememberScaleBase(active, source);
   layers();
   inspector();
   updateDirty();
@@ -2337,7 +2417,7 @@ $('scale-all').onclick = guarded(() => {
   updateDirty();
   fit();
   closePopups();
-  toast('Размеры рассчитаны от прочитанных файлов, без накопления');
+  toast('Размеры рассчитаны от исходной базы каждого окна, без накопления');
 });
 $('save').onclick = guarded(async () => {
   if ($('client-path').value !== data.client) throw Error('Сначала откройте выбранную копию игры');
@@ -2510,6 +2590,21 @@ $('export').onclick = () => {
   for (const e of edits.values())
     if (e.insert)
       settings.push({ file: e.file, node: e.node, key: e.key, insert: e.insert, value: e.value });
+  for (const file of data.files)
+    for (const node of walk(file.tree))
+      if (
+        node.scaleBase &&
+        !settings.some(
+          (e) => e.file === file.name && e.node === node.id && e.insert === 'scaleBase',
+        )
+      )
+        settings.push({
+          file: file.name,
+          node: node.id,
+          key: 'scaleBase',
+          insert: 'scaleBase',
+          value: JSON.stringify(node.scaleBase),
+        });
   const url = URL.createObjectURL(
     new Blob(
       [
@@ -2558,6 +2653,11 @@ $('profile').onchange = guarded(async (e) => {
       !node ||
       (!(edit.insert === 'tcoords' && edit.key === 'tcoords' && node.kind === 'sprite') &&
         !(edit.insert === 'alignWin' && edit.key === 'alignWin' && node.kind === 'windowUI') &&
+        !(
+          edit.insert === 'scaleBase' &&
+          edit.key === 'scaleBase' &&
+          ['windowUI', 'root'].includes(node.kind)
+        ) &&
         !get(node, edit.key, edit.occurrence || 0)) ||
       typeof edit.value !== 'string'
     )
@@ -2579,6 +2679,7 @@ $('profile').onchange = guarded(async (e) => {
     for (const { edit: e, target, node } of batch)
       if (e.insert === 'tcoords') editCoords(node, e.value, target);
       else if (e.insert === 'alignWin') editAnchor(node, e.value, target);
+      else if (e.insert === 'scaleBase') editScaleBase(node, JSON.parse(e.value), target);
       else
         edit(
           node,

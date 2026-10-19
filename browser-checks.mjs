@@ -107,6 +107,22 @@ export async function browserChecks({
     (await fs.stat(path.join(fixture, 'xadd/studio_f3_1500.dds'))).size > 0,
     'Атлас доступен нативному загрузчику',
   );
+  const savedFontId = await field('Шрифт').inputValue();
+  await popup('#scale-open', '#scale-popup');
+  await page.locator('#scale-window').click();
+  check(
+    (await page.locator('#save').isDisabled()) &&
+      (await value('Ширина')) === Math.round(baseWidth * 1.5) &&
+      (await field('Шрифт').inputValue()) === savedFontId,
+    'Повторные 150% после сохранения не увеличивают окно и шрифты',
+  );
+  await popup('#scale-open', '#scale-popup');
+  await page.locator('#scale-text').click();
+  check(
+    (await page.locator('#save').isDisabled()) &&
+      (await field('Шрифт').inputValue()) === savedFontId,
+    'Отдельная кнопка шрифтов тоже сохраняет исходную базу после записи',
+  );
   await page.locator('#history').click();
   await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
   await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
@@ -266,6 +282,31 @@ export async function browserChecks({
   await page.locator('#hotbar-horizontal').click();
   await page.locator('#hotbar-bottom').click();
   check((await value('Y')) === 0, 'Нижняя привязка убирает отступ от нижнего края');
+  const scaleHotbar = async (factor) => {
+    await popup('#scale-open', '#scale-popup');
+    await page.locator('#scale').selectOption(String(factor));
+    await page.locator('#scale-window').click();
+    await waitView();
+  };
+  await scaleHotbar(1.5);
+  const scaledHotbar = [await value('Ширина'), await value('Высота')];
+  check(
+    JSON.stringify(scaledHotbar) ===
+      JSON.stringify([Math.round(initialSize[1] * 1.5), Math.round(initialSize[0] * 1.5)]),
+    'Масштаб после нижней привязки сохраняет горизонтальные пропорции',
+  );
+  await scaleHotbar(1.5);
+  check(
+    JSON.stringify([await value('Ширина'), await value('Высота')]) === JSON.stringify(scaledHotbar),
+    'Повторные 150% не накапливаются до сохранения',
+  );
+  await scaleHotbar(1.25);
+  check(
+    (await value('Ширина')) === Math.round(initialSize[1] * 1.25),
+    'Смена процента считается от исходной ширины горизонтальной панели',
+  );
+  await scaleHotbar(1.5);
+  check((await value('Y')) === 0, 'Масштаб сохраняет нулевой отступ от нижнего края');
   await page.locator('#save').click();
   await page.waitForFunction(
     () => document.getElementById('dirty').textContent === 'Нет изменений',
@@ -275,15 +316,23 @@ export async function browserChecks({
     ),
     slotsAfter = hotbarAfter.children.filter((n) => prop(n, 'classID')?.value === 'SLOT');
   check(
-    prop(hotbarAfter, 'size').value === [initialSize[1], initialSize[0]].join(' '),
+    prop(hotbarAfter, 'size').value === scaledHotbar.join(' '),
     'Горизонтальная геометрия сохранена в клиент',
   );
   check(
     slotsAfter.every(
       (n, i) =>
-        n.id === slotsBefore[i].id && prop(n, 'size').value === prop(slotsBefore[i], 'size').value,
+        n.id === slotsBefore[i].id &&
+        prop(n, 'size')
+          .value.split(/\s+/)
+          .every(
+            (v, axis) =>
+              Math.abs(
+                Number(v) - Number(prop(slotsBefore[i], 'size').value.split(/\s+/)[axis]) * 1.5,
+              ) <= 1,
+          ),
     ),
-    'Все предметные слоты сохраняют размеры и игровые номера',
+    'Предметные слоты увеличены один раз и сохраняют игровые номера',
   );
   check(
     walk(hotbarAfter).some((n) => n.props.some((p) => p.key === 'tcoords')),
@@ -293,6 +342,52 @@ export async function browserChecks({
     prop(hotbarAfter, 'alignWin').value.includes('RIGHT_Y'),
     'Нижняя привязка сохранена нативным полем клиента',
   );
+  const frameName = prop(hotbarAfter, 'drawMethod').value.match(/SPRITE\s+"([^"]+)"/)[1];
+  const hotbarFrame = walk(hotbarAfter).find(
+    (n) => n.kind === 'sprite' && prop(n, 'name')?.value === `"${frameName}"`,
+  );
+  check(
+    prop(hotbarFrame, 'size').value === prop(hotbarAfter, 'size').value,
+    'Размер фоновой рамки совпадает с горизонтальным окном после сохранения',
+  );
+  const texture = prop(hotbarFrame, 'texture')
+    .value.match(/"[^"]*"|\S+/g)
+    .slice(1)
+    .map(Number);
+  check(
+    texture[6] - texture[4] === scaledHotbar[0] && texture[7] - texture[5] === scaledHotbar[1],
+    'Прямоугольник текстуры соответствует горизонтальному масштабу',
+  );
+  check(!!hotbarAfter.scaleBase, 'Исходная геометрия сохранена вместе с интерфейсом');
+  const scalingOptions = {
+    contents: await page.locator('#scale-contents').isChecked(),
+    fonts: await page.locator('#scale-fonts').isChecked(),
+    safeScreen: await page.locator('#safe-screen').isChecked(),
+  };
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('.layer').length > 1);
+  await openWindow('Панель хоткеев');
+  await scaleHotbar(1.5);
+  check(
+    JSON.stringify([await value('Ширина'), await value('Высота')]) ===
+      JSON.stringify(scaledHotbar) && (await page.locator('#save').isDisabled()),
+    '150% после сохранения и перезагрузки оставляют те же размеры и не требуют повторной записи',
+  );
+  await scaleHotbar(1);
+  check(
+    (await value('Ширина')) === initialSize[1] &&
+      (await value('Высота')) === initialSize[0] &&
+      (await value('Y')) === 0,
+    '100% возвращают исходный размер, сохраняя горизонтальную раскладку и нижнюю привязку',
+  );
+  await page.locator('#undo').click();
+  await popup('#scale-open', '#scale-popup');
+  await page.locator('#scale-contents').setChecked(scalingOptions.contents);
+  await page.locator('#scale-fonts').setChecked(scalingOptions.fonts);
+  await page.locator('#scale-open').click();
+  await popup('#view-open', '#view-popup');
+  await page.locator('#safe-screen').setChecked(scalingOptions.safeScreen);
+  await page.locator('#view-open').click();
   await page.locator('#history').click();
   await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
   await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
