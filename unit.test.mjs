@@ -654,7 +654,7 @@ test('Слоты без textofs получают масштабированно�
   const inserts = slotOffsetInserts(root, 1.5);
   assert.deepEqual(
     inserts.map((e) => [e.node, e.value]),
-    [[plain.id, '-3 3']],
+    [[plain.id, '-4 4']],
   );
   assert.deepEqual(
     slotOffsetInserts(root, 1).map((e) => e.value),
@@ -668,13 +668,13 @@ test('Слоты без textofs получают масштабированно�
     value: JSON.stringify(captureScaleBase(root)),
   };
   const saved = applyEdits(text, [...inserts, baseEdit]);
-  assert.ok(saved.includes('\t size\t    36 35\r\n\t textofs -3 3\r\n      }'));
+  assert.ok(saved.includes('\t size\t    36 35\r\n\t textofs -4 4\r\n      }'));
   assert.equal(saved.replaceAll('\r\n', '').includes('\n'), false);
   const reopened = parse(saved).children[0],
     slots = walk(reopened).filter(isSlot);
   assert.deepEqual(
     slots.map((n) => prop(n, 'textofs').value),
-    ['-3 3', '-4 1'],
+    ['-4 4', '-4 1'],
   );
   // The next scale starts from the client default, not from the already scaled value.
   assert.deepEqual(

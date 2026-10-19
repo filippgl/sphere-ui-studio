@@ -115,12 +115,23 @@ export function slotOffsetInserts(root, factor, from = () => slotTextOffset) {
       node: n.id,
       start: n.closeStart,
       end: n.closeStart,
-      value: from(n)
+      value: scaleSlotOffset(from(n), factor),
+    }));
+}
+// The 3 px slot frame grows with the slot and is drawn over the count, so the default offset
+// keeps the digits as far under it as at 100% instead of scaling linearly.
+export function scaleSlotOffset(text, factor) {
+  return text.trim() === slotTextOffset
+    ? text
+        .trim()
+        .split(/\s+/)
+        .map((x) => Math.sign(x) * Math.ceil(Math.abs(Number(x)) * factor + (factor - 1)))
+        .join(' ')
+    : text
         .trim()
         .split(/\s+/)
         .map((x) => Math.round(Number(x) * factor))
-        .join(' '),
-    }));
+        .join(' ');
 }
 
 export function parse(text) {

@@ -10,6 +10,7 @@ import {
   isSlot,
   slotTextOffset,
   slotOffsetInserts,
+  scaleSlotOffset,
 } from './ui-core.mjs';
 const storage = await createStorage();
 let fontPlans = [];
@@ -2233,6 +2234,7 @@ function scaleWindow(w, factor, fromCurrent = false) {
           .split(/\s+/)
           .map((x) => Math.round(Number(x) * factor))
           .join(' ');
+      if (p.key.toLowerCase() === 'textofs' && isSlot(n)) v = scaleSlotOffset(original, factor);
       if (p.key.toLowerCase() === 'size' && n.kind !== 'windowUI' && get(n, 'position')) {
         const position = originalValues.get(get(n, 'position')).split(/\s+/).map(Number);
         v = original
