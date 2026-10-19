@@ -1,0 +1,16 @@
+{
+  "name": "sphere-ui-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Локальный визуальный редактор интерфейса Сферы",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test unit.test.mjs",
+    "test:client": "node test.mjs"
+  }
+}

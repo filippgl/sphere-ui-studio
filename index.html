@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#202124" />
+    <title>Sphere Studio · Редактор интерфейса</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <button
+        class="studio-mark icon-button"
+        id="main-menu"
+        aria-label="Меню проекта"
+        data-tip="Меню проекта"
+      >
+        <span class="studio-symbol">S</span>
+      </button>
+      <div class="project-name">
+        <span>Sphere Studio</span><span class="slash">/</span
+        ><strong id="title">Интерфейс игры</strong><span class="project-tag">UI EDITOR</span>
+      </div>
+      <button class="command-trigger" id="command-open" data-tip="Быстрые команды · Ctrl K">
+        <span data-icon="search"></span><span>Найти окно или действие</span><kbd>Ctrl K</kbd>
+      </button>
+      <span class="unsaved" id="dirty">Нет изменений</span
+      ><button
+        class="icon-button"
+        id="history"
+        aria-label="Резервные копии"
+        data-tip="Резервные копии"
+      >
+        <span data-icon="history"></span></button
+      ><button class="primary" id="save" disabled>
+        <span data-icon="check"></span><span>Сохранить в клиент</span>
+      </button>
+    </header>
+    <div class="client-strip">
+      <span class="connection-dot"></span><span id="client">Клиент</span
+      ><button id="client-open">
+        <span id="client-summary">Выберите папку игры</span
+        ><span data-icon="chevron-down"></span></button
+      ><span class="local-label">Локальный проект</span
+      ><button
+        id="shortcuts-open"
+        class="icon-button"
+        aria-label="Горячие клавиши"
+        data-tip="Горячие клавиши · ?"
+      >
+        <span data-icon="keyboard"></span>
+      </button>
+    </div>
+    <main>
+      <aside class="library">
+        <div class="sidebar-tabs" role="tablist" aria-label="Навигатор">
+          <button id="tab-layers" role="tab" aria-selected="true" class="active">Слои</button
+          ><button id="tab-windows" role="tab" aria-selected="false">
+            Окна <span id="count">0</span>
+          </button>
+        </div>
+        <section id="layers-panel" class="navigator-panel">
+          <button class="frame-picker" id="frame-picker">
+            <span data-icon="frame"></span><span id="frame-name">Выберите окно</span
+            ><span data-icon="chevron-down"></span>
+          </button>
+          <div class="search-box">
+            <span data-icon="search"></span
+            ><input
+              id="layer-search"
+              type="search"
+              placeholder="Найти слой…"
+              aria-label="Поиск слоёв"
+            /><kbd>⌕</kbd>
+          </div>
+          <div class="layers-caption"><span>СЛОИ ОКНА</span><span id="layer-count"></span></div>
+          <div id="layers" role="tree" aria-label="Слои интерфейса"></div>
+          <div class="sidebar-footnote">
+            <span data-icon="info"></span
+            ><span>Порядок слоёв соответствует номерам элементов в игре.</span>
+          </div>
+        </section>
+        <section id="windows-panel" class="navigator-panel" hidden>
+          <div class="search-box">
+            <span data-icon="search"></span
+            ><input id="search" type="search" placeholder="Найти окно…" aria-label="Поиск окон" />
+          </div>
+          <div class="chips">
+            <button data-filter="all" class="active">Все</button
+            ><button data-filter="main">Основные</button
+            ><button data-filter="dirty">Изменены</button>
+          </div>
+          <div id="windows"></div>
+        </section>
+        <footer>
+          <button id="import"><span data-icon="upload"></span>Импорт профиля</button
+          ><button id="export"><span data-icon="download"></span>Экспорт профиля</button
+          ><input id="profile" type="file" accept="application/json,.json" hidden /><button
+            id="research"
+          >
+            <span data-icon="book"></span>Устройство окон<span class="external">↗</span>
+          </button>
+        </footer>
+      </aside>
+      <section class="workspace">
+        <div class="canvas-header">
+          <div class="breadcrumbs">
+            <span data-icon="frame"></span><span id="subtitle">Холст</span
+            ><span class="crumb-divider">/</span><span id="filename"></span>
+          </div>
+          <div class="canvas-actions">
+            <button id="view-open" class="text-button"><span data-icon="sliders"></span>Вид</button
+            ><button id="scale-open" class="text-button">
+              <span data-icon="scale"></span>Масштаб UI
+            </button>
+          </div>
+        </div>
+        <div id="viewport" tabindex="0" aria-label="Холст редактора">
+          <canvas id="canvas" aria-label="Схема интерфейса"></canvas>
+          <div id="frame-label"></div>
+          <div id="dimension-label"></div>
+          <div id="empty-state" hidden>
+            <div class="empty-art"><span data-icon="frame"></span></div>
+            <h1>Интерфейс начинается здесь</h1>
+            <p>
+              Выберите папку клиента, чтобы открыть окна игры<br />и настроить их на свободном
+              холсте.
+            </p>
+            <button id="welcome-open" class="primary">
+              <span data-icon="folder"></span>Открыть папку игры</button
+            ><span class="empty-caption">Файлы остаются на вашем компьютере</span>
+          </div>
+          <div class="floating-tools" aria-label="Инструменты холста">
+            <button
+              class="tool active"
+              id="tool-select"
+              aria-label="Выделение"
+              aria-pressed="true"
+              data-tip="Выделение · V"
+            >
+              <span data-icon="cursor"></span><kbd>V</kbd></button
+            ><button
+              class="tool"
+              id="tool-hand"
+              aria-label="Рука"
+              aria-pressed="false"
+              data-tip="Рука · H / Пробел"
+            >
+              <span data-icon="hand"></span><kbd>H</kbd></button
+            ><span class="tool-divider"></span
+            ><button
+              id="undo"
+              class="icon-button"
+              disabled
+              aria-label="Отменить"
+              data-tip="Отменить · Ctrl Z"
+            >
+              <span data-icon="undo"></span></button
+            ><button
+              id="redo"
+              class="icon-button"
+              disabled
+              aria-label="Повторить"
+              data-tip="Повторить · Ctrl Shift Z"
+            >
+              <span data-icon="redo"></span></button
+            ><span class="tool-divider"></span
+            ><button id="zoom-out" class="icon-button" aria-label="Уменьшить">
+              <span data-icon="minus"></span></button
+            ><button id="zoom-label" data-tip="Масштаб холста">100%</button
+            ><button id="zoom-in" class="icon-button" aria-label="Увеличить">
+              <span data-icon="plus"></span></button
+            ><button
+              id="fit"
+              class="icon-button"
+              aria-label="Вписать окно"
+              data-tip="Вписать окно · Shift 1"
+            >
+              <span data-icon="fit"></span>
+            </button>
+          </div>
+          <div class="canvas-hint" id="canvas-hint">
+            Пробел + мышь: холст <span>·</span> Ctrl + колёсико: масштаб
+          </div>
+        </div>
+        <div class="status">
+          <span id="selection">Ничего не выбрано</span
+          ><span class="status-right"
+            ><span class="connection-dot"></span>Предпросмотр
+            <span class="status-muted">Текст и динамические данные приблизительные</span></span
+          >
+        </div>
+      </section>
+      <aside class="inspector">
+        <div class="sidebar-tabs" role="tablist" aria-label="Свойства">
+          <button class="active" id="tab-design" role="tab" aria-selected="true">Дизайн</button
+          ><button id="tab-code" role="tab" aria-selected="false">Код</button
+          ><span class="panel-tag" id="node-kind">FRAME</span>
+        </div>
+        <div class="inspector-body" id="design-panel">
+          <div class="selection-heading">
+            <span id="selected-icon" data-icon="frame"></span>
+            <div><strong id="selected-name">Окно</strong><small id="selected-meta"></small></div>
+            <button
+              id="selection-focus"
+              class="icon-button"
+              aria-label="Показать выделение"
+              data-tip="Приблизить выделение · Shift 2"
+            >
+              <span data-icon="focus"></span>
+            </button>
+          </div>
+          <select id="elements" aria-label="Выбор элемента" class="compact-select"></select>
+          <div class="align-bar" id="align-bar">
+            <button
+              data-align="left"
+              class="icon-button"
+              aria-label="Выровнять по левому краю"
+              data-tip="По левому краю"
+            >
+              <span data-icon="align-left"></span></button
+            ><button
+              data-align="center-x"
+              class="icon-button"
+              aria-label="Выровнять по центру горизонтально"
+              data-tip="По центру X"
+            >
+              <span data-icon="align-center-x"></span></button
+            ><button
+              data-align="right"
+              class="icon-button"
+              aria-label="Выровнять по правому краю"
+              data-tip="По правому краю"
+            >
+              <span data-icon="align-right"></span></button
+            ><button
+              data-align="top"
+              class="icon-button"
+              aria-label="Выровнять по верхнему краю"
+              data-tip="По верхнему краю"
+            >
+              <span data-icon="align-top"></span></button
+            ><button
+              data-align="center-y"
+              class="icon-button"
+              aria-label="Выровнять по центру вертикально"
+              data-tip="По центру Y"
+            >
+              <span data-icon="align-center-y"></span></button
+            ><button
+              data-align="bottom"
+              class="icon-button"
+              aria-label="Выровнять по нижнему краю"
+              data-tip="По нижнему краю"
+            >
+              <span data-icon="align-bottom"></span>
+            </button>
+          </div>
+          <div id="fields"></div>
+          <div id="selection-notes"></div>
+          <div id="files-note"></div>
+          <button id="reset" class="reset-button">
+            <span data-icon="reset"></span>Сбросить изменения окна
+          </button>
+        </div>
+        <div id="code-panel" class="inspector-body" hidden>
+          <div class="code-caption">Исходное описание выбранного элемента</div>
+          <pre id="source"></pre>
+          <p class="code-caption">Порядок элементов, комментарии и кодировка файла сохраняются.</p>
+        </div>
+      </aside>
+    </main>
+    <div id="toast" role="status" aria-live="polite">
+      <span id="toast-icon"></span><span id="toast-text"></span>
+    </div>
+    <div id="context-menu" class="popup context-menu" hidden></div>
+    <div id="main-popup" class="popup menu-popup" hidden>
+      <div class="popup-caption">ПРОЕКТ</div>
+      <button id="menu-client"><span data-icon="folder"></span>Открыть папку игры</button
+      ><button id="menu-history"><span data-icon="history"></span>Резервные копии</button
+      ><button id="menu-shortcuts">
+        <span data-icon="keyboard"></span>Горячие клавиши<kbd>?</kbd>
+      </button>
+      <div class="popup-caption">SPHERE STUDIO · ЛОКАЛЬНО</div>
+    </div>
+    <div id="view-popup" class="popup settings-popup" hidden>
+      <div class="popup-title">Вид холста</div>
+      <label class="toggle-row"
+        ><span>Границы элементов<small>Показывать все области</small></span
+        ><input id="bounds" type="checkbox" /><span class="switch"></span></label
+      ><label class="toggle-row"
+        ><span>Сетка<small>Точки на холсте</small></span
+        ><input id="grid" type="checkbox" checked /><span class="switch"></span></label
+      ><label class="toggle-row"
+        ><span>Умные направляющие<small>Привязка к краям и центрам</small></span
+        ><input id="smart-snap" type="checkbox" checked /><span class="switch"></span></label
+      ><label class="toggle-row"
+        ><span>Игровой экран<small>Учитывать привязку окна</small></span
+        ><input id="screen-mode" type="checkbox" /><span class="switch"></span></label
+      ><label class="setting-field"
+        >Разрешение<select id="resolution" aria-label="Размер игрового экрана">
+          <option>1920 × 1080</option>
+          <option>2560 × 1440</option>
+          <option>3440 × 1440</option>
+          <option>1280 × 720</option>
+        </select></label
+      ><label class="setting-field"
+        >Шаг перемещения<input
+          id="snap"
+          type="number"
+          min="1"
+          max="64"
+          value="1"
+          aria-label="Шаг сетки"
+        /><span>px</span></label
+      >
+    </div>
+    <div id="scale-popup" class="popup settings-popup" hidden>
+      <div class="popup-title">Масштаб интерфейса</div>
+      <p class="popup-description">
+        Меняет размеры элементов в файлах игры. Масштаб холста остаётся независимым.
+      </p>
+      <label class="setting-field"
+        >Размер<select id="scale">
+          <option value="1">100%</option>
+          <option value="1.25">125%</option>
+          <option value="1.5">150%</option>
+          <option value="1.75">175%</option>
+          <option value="2">200%</option>
+        </select></label
+      ><button id="scale-window" class="primary">Применить к окну</button
+      ><button id="scale-all">Применить ко всем окнам</button
+      ><small class="popup-description">Растровые шрифты выбираются отдельно.</small>
+    </div>
+    <div id="zoom-popup" class="popup zoom-popup" hidden>
+      <button data-zoom="0.5">50%</button><button data-zoom="1">100%<kbd>Ctrl 0</kbd></button
+      ><button data-zoom="2">200%</button>
+      <hr />
+      <button id="zoom-fit">Вписать окно<kbd>Shift 1</kbd></button
+      ><button id="zoom-selection">К выделению<kbd>Shift 2</kbd></button>
+    </div>
+    <dialog id="client-dialog" class="client-dialog">
+      <div class="dialog-head">
+        <div class="dialog-symbol"><span data-icon="folder"></span></div>
+        <button data-close="client-dialog" class="icon-button" aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <h2>Открыть клиент игры</h2>
+      <p class="dialog-description">
+        Выберите папку, где находятся исполняемый файл клиента и каталог effects.
+      </p>
+      <label class="input-label" for="client-path">Папка клиента</label>
+      <div class="path-input">
+        <input
+          id="client-path"
+          aria-label="Путь к папке игры"
+          placeholder="Выберите папку на компьютере"
+          spellcheck="false"
+        /><button id="browse-client" class="icon-button" aria-label="Выбрать папку">
+          <span data-icon="folder"></span>
+        </button>
+      </div>
+      <div class="client-buttons">
+        <button id="discover-clients"><span data-icon="search"></span>Найти внутри папки</button
+        ><button id="connect-client" class="primary">Открыть эту копию</button>
+      </div>
+      <div class="recent-caption" id="recent-caption">НЕДАВНИЕ И НАЙДЕННЫЕ</div>
+      <div id="recent-clients"></div>
+      <select id="client-choice" aria-label="Найденные копии игры" hidden></select>
+      <p id="discovery-status" class="dialog-description"></p>
+    </dialog>
+    <dialog id="command-dialog" class="command-dialog">
+      <div class="command-search">
+        <span data-icon="search"></span
+        ><input
+          id="command-search"
+          placeholder="Окно или действие…"
+          aria-label="Поиск команд"
+          autocomplete="off"
+        /><kbd>Esc</kbd>
+      </div>
+      <div id="command-results" role="listbox" aria-label="Команды и окна"></div>
+      <div class="command-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> навигация</span><span><kbd>↵</kbd> открыть</span>
+      </div>
+    </dialog>
+    <dialog id="backup-dialog">
+      <div class="dialog-head">
+        <h2>Резервные копии</h2>
+        <button id="close-dialog" class="icon-button" aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <p class="dialog-description">Перед каждым сохранением создаётся копия изменённых файлов.</p>
+      <div id="backup-list"></div>
+    </dialog>
+    <dialog id="shortcuts-dialog">
+      <div class="dialog-head">
+        <h2>Работайте быстрее</h2>
+        <button data-close="shortcuts-dialog" class="icon-button" aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <p class="dialog-description">Привычные сочетания для работы с интерфейсом игры.</p>
+      <div id="shortcuts-list"></div>
+    </dialog>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>
