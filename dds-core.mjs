@@ -75,7 +75,12 @@ export function rgbaFromDds(input) {
       stride = bits / 8;
     if (bits !== 32 && bits !== 24) throw Error(`Неподдерживаемая текстура: ${format}`);
     const masks = [92, 96, 100, 104].map((p) => u32(p));
-    const rowPitch = Math.max(width * stride, u32(20) || 0);
+    // dwPitchOrLinearSize is a row stride only with DDSD_PITCH; some native UI
+    // atlases put the total payload size here and set DDSD_LINEARSIZE instead.
+    const rowPitch = u32(8) & 0x8 ? u32(20) : width * stride;
+    if (rowPitch < width * stride) throw Error('Недопустимый шаг строки текстуры');
+    if (128 + (height - 1) * rowPitch + width * stride > buf.length)
+      throw Error('Текстура обрезана');
     for (let y = 0; y < height; y++)
       for (let x = 0; x < width; x++) {
         const pos = 128 + y * rowPitch + x * stride;

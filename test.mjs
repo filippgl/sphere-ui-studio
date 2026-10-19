@@ -132,6 +132,43 @@ try {
   );
   check((await request('/api/restore', { id: saved.data.backup })).status === 200, 'Откат');
   check(hash(await fs.readFile(path.join(effects, file.name))) === file.hash, 'Откат байт в байт');
+  const quickBefore = await fs.readFile(path.join(effects, 'quickitems.ui'));
+  const saveSize = async (name, value) => {
+    const current = (await request('/api/catalog')).data.files.find((f) => f.name === name);
+    const field = prop(
+      walk(current.tree).find((n) => n.kind === 'windowUI'),
+      'size',
+    );
+    const result = await request('/api/save', {
+      files: [{ name, hash: current.hash, edits: [{ start: field.start, end: field.end, value }] }],
+    });
+    check(result.status === 200, 'Сохранение следующей ревизии для цепочки отката');
+    return result.data.backup;
+  };
+  const oldRevision = await saveSize(file.name, newSize);
+  await saveSize('quickitems.ui', '52 506');
+  await saveSize(file.name, `600 ${baseHeight}`);
+  const beforeRollback = await fs.readFile(path.join(effects, file.name));
+  const oldRestore = await request('/api/restore', { id: oldRevision });
+  check(
+    oldRestore.status === 200 && oldRestore.data.revisions.length === 3,
+    'Старая ревизия сразу откатывает всю последующую цепочку',
+  );
+  check(
+    hash(await fs.readFile(path.join(effects, file.name))) === file.hash &&
+      (await fs.readFile(path.join(effects, 'quickitems.ui'))).equals(quickBefore),
+    'Откат цепочки восстанавливает оба окна',
+  );
+  const undoRestore = await request('/api/restore', { id: oldRestore.data.backup });
+  check(
+    undoRestore.status === 200 &&
+      (await fs.readFile(path.join(effects, file.name))).equals(beforeRollback),
+    'Автоматическая точка возвращает состояние до отката',
+  );
+  check(
+    (await request('/api/restore', { id: oldRevision })).status === 200,
+    'Повторный выбор старой точки учитывает историю откатов',
+  );
 
   const playwright = process.env.PLAYWRIGHT_MODULE || 'playwright';
   const { chromium } = await import(playwright);

@@ -101,6 +101,27 @@ test('DXT3 и DXT5 сохраняют альфа-канал', () => {
   dxt5.writeUInt16LE(0x001f, 136);
   assert.deepEqual([...rgbaFromDds(dxt5).data.subarray(0, 4)], [0, 0, 255, 200]);
 });
+test('RGBA DDS различает размер данных и шаг строки, сохраняя прозрачность и padding', () => {
+  const image = dds('', 64);
+  image.writeUInt32LE(0x81007, 8);
+  image.writeUInt32LE(64, 20);
+  image.writeUInt32LE(32, 88);
+  [0xff, 0xff00, 0xff0000, 0xff000000].forEach((mask, i) => image.writeUInt32LE(mask, 92 + i * 4));
+  for (let i = 128; i < image.length; i += 4) image.set([10, 20, 30, 128], i);
+  assert.deepEqual([...rgbaFromDds(image).data.slice(-4)], [10, 20, 30, 128]);
+  const pitched = Buffer.concat([
+    image.subarray(0, 128),
+    ...Array.from({ length: 4 }, () =>
+      Buffer.concat([image.subarray(128, 144), Buffer.alloc(4, 255)]),
+    ),
+  ]);
+  pitched.writeUInt32LE(0x100f, 8);
+  pitched.writeUInt32LE(20, 20);
+  assert.deepEqual(rgbaFromDds(pitched).data, rgbaFromDds(image).data);
+  assert.throws(() => rgbaFromDds(pitched.subarray(0, -5)), /обрезана/);
+  pitched.writeUInt32LE(8, 20);
+  assert.throws(() => rgbaFromDds(pitched), /шаг строки/);
+});
 test('PNG содержит исходный пиксель после распаковки IDAT', () => {
   const bytes = png({ width: 1, height: 1, data: Buffer.from([10, 20, 30, 128]) });
   assert.equal(bytes.subarray(1, 4).toString(), 'PNG');

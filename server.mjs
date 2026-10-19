@@ -9,6 +9,7 @@ import { decode, encode, hash, parse, walk, value, unquote, applyEdits } from '.
 import { rgbaFromDds, png } from './dds.mjs';
 import { resolution } from './layout-core.mjs';
 import { prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
+import { backupId, historyEntries, restorePlan } from './history-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (name) => {
@@ -276,7 +277,7 @@ async function save(files, fontScales = [], fontsHash) {
     }
     // Fonts must exist before any UI file starts referring to their IDs.
     changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
-    const id = new Date().toISOString().replace(/[:.]/g, '-') + '-' + randomUUID().slice(0, 6);
+    const id = backupId(await backups(), randomUUID());
     const dir = path.join(backupRoot, id);
     await fs.mkdir(dir, { recursive: true });
     for (const c of changes)
@@ -334,22 +335,44 @@ async function restore(id) {
   if (mutation) throw Error('Дождитесь сохранения');
   mutation = true;
   try {
-    const dir = path.join(backupRoot, id);
-    const manifest = JSON.parse(await fs.readFile(path.join(dir, 'manifest.json'), 'utf8'));
-    const files = [];
-    for (const item of manifest) {
-      if (item.scope ? !validAsset(item) : !validNames.has(item.name))
-        throw Error('Неизвестный файл в резервной копии');
-      const current = await fs.readFile(assetPath(item));
-      if (hash(current) !== item.after)
-        throw Error(
-          `${item.name}: после этой копии файл менялся. Сначала откатите более новые изменения`,
-        );
-      const bytes =
-        item.before === null ? null : await fs.readFile(path.join(dir, backupFile(item)));
-      if (digest(bytes) !== item.before) throw Error('Резервная копия повреждена');
-      files.push({ ...item, bytes, current });
-    }
+    const ids = await backups();
+    const plan = await restorePlan(
+      id,
+      ids,
+      async (revision) =>
+        JSON.parse(await fs.readFile(path.join(backupRoot, revision, 'manifest.json'), 'utf8')),
+      (revision, item) => fs.readFile(path.join(backupRoot, revision, backupFile(item))),
+      digest,
+      (item) => (item.scope ? validAsset(item) : validNames.has(item.name)),
+    );
+    const files = await Promise.all(
+      plan.files.map(async (item) => ({ ...item, current: await optionalRead(assetPath(item)) })),
+    );
+    const checkpoint = backupId(ids, randomUUID()),
+      dir = path.join(backupRoot, checkpoint);
+    await fs.mkdir(dir);
+    for (const item of files)
+      if (item.current !== null) await fs.writeFile(path.join(dir, backupFile(item)), item.current);
+    await fs.writeFile(
+      path.join(dir, 'manifest.json'),
+      JSON.stringify(
+        files.map((item) => ({
+          name: item.name,
+          ...(item.scope ? { scope: item.scope } : {}),
+          before: digest(item.current),
+          after: digest(item.bytes),
+        })),
+        null,
+        2,
+      ),
+    );
+    const transaction = {
+      state: 'pending',
+      kind: 'restore',
+      target: id,
+      revisions: plan.revisions,
+    };
+    await fs.writeFile(path.join(dir, 'transaction.json'), JSON.stringify(transaction));
     const written = [];
     try {
       for (const f of files) {
@@ -358,14 +381,22 @@ async function restore(id) {
         await putAsset(f, f.bytes);
         written.push(f);
       }
+      await fs.writeFile(
+        path.join(dir, 'transaction.json'),
+        JSON.stringify({ ...transaction, state: 'committed' }),
+      );
     } catch (e) {
       for (const f of written.reverse())
         if (digest(await optionalRead(assetPath(f))) === digest(f.bytes))
           await putAsset(f, f.current);
+      await fs.writeFile(
+        path.join(dir, 'transaction.json'),
+        JSON.stringify({ ...transaction, state: 'rolled-back' }),
+      );
       throw e;
     }
     fonts = await readFonts(client);
-    return { restored: files.map((f) => f.name) };
+    return { restored: files.map((f) => f.name), backup: checkpoint, revisions: plan.revisions };
   } finally {
     mutation = false;
   }
@@ -438,6 +469,28 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/clients') return send(res, 200, await clients());
     if (url.pathname === '/api/backups') return send(res, 200, await backups());
+    if (url.pathname === '/api/history')
+      return send(
+        res,
+        200,
+        await historyEntries(
+          await backups(),
+          async (id) => {
+            const dir = path.join(backupRoot, id);
+            let transaction;
+            try {
+              transaction = JSON.parse(
+                await fs.readFile(path.join(dir, 'transaction.json'), 'utf8'),
+              );
+            } catch {}
+            return {
+              manifest: JSON.parse(await fs.readFile(path.join(dir, 'manifest.json'), 'utf8')),
+              transaction,
+            };
+          },
+          (item) => (item.scope ? validAsset(item) : validNames.has(item.name)),
+        ),
+      );
     if (url.pathname === '/api/texture')
       return send(res, 200, await texture(url.searchParams.get('name') || ''), 'image/png');
     const staticFiles = {
@@ -456,6 +509,7 @@ const server = http.createServer(async (req, res) => {
       '/chat-core.mjs': ['chat-core.mjs', 'text/javascript'],
       '/hotbar-core.mjs': ['hotbar-core.mjs', 'text/javascript'],
       '/font-core.mjs': ['font-core.mjs', 'text/javascript'],
+      '/history-core.mjs': ['history-core.mjs', 'text/javascript'],
     };
     if (staticFiles[url.pathname]) {
       const [name, type] = staticFiles[url.pathname];

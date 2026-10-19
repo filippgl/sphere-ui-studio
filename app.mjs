@@ -2507,20 +2507,47 @@ $('save').onclick = guarded(async () => {
   }
 });
 $('history').onclick = guarded(async () => {
-  const ids = await api('/api/backups');
+  const history = await api('/api/history');
   $('backup-list').replaceChildren();
-  if (!ids.length)
+  if (!history.length)
     $('backup-list').append(
       el('div', 'empty-list', 'Резервные копии появятся после первого сохранения.'),
     );
-  for (const id of ids) {
+  for (const entry of history) {
+    const { id } = entry;
     const row = el('div', 'backup'),
       date = new Date(id.slice(0, 19).replace(/T(\d\d)-(\d\d)-(\d\d)/, 'T$1:$2:$3') + 'Z'),
       text = el('span', '', date.toLocaleString('ru-RU'));
-    text.append(el('small', '', 'Изменённые файлы интерфейса'));
+    const affected = (entry.files || []).filter((f) => !f.scope);
+    const windowNames = [
+      ...new Set(
+        affected.flatMap((f) => {
+          const matches = windows.filter((w) => w.file.name === f.name).map((w) => w.title);
+          return matches.length ? matches : [f.name === 'sprites.ui' ? 'Общие спрайты' : f.name];
+        }),
+      ),
+    ];
+    const resources = (entry.files || []).length - affected.length;
+    text.append(
+      el(
+        'small',
+        '',
+        entry.error ||
+          `${windowNames.join(', ') || 'Ресурсы интерфейса'}${resources ? ` · ресурсов: ${resources}` : ''}`,
+      ),
+    );
+    text.append(
+      el(
+        'small',
+        '',
+        entry.kind === 'restore'
+          ? `Состояние до отката. Вернёт изменения ${entry.revisions} сохранений.`
+          : `Состояние перед сохранением. Откатит выбранное и более новые: ${entry.revisions}.`,
+      ),
+    );
     const b = el('button', '', 'Восстановить');
+    b.disabled = !!entry.error;
     b.onclick = guarded(async () => {
-      if (edits.size && !confirm('Откатить файлы и убрать несохранённые изменения?')) return;
       const restored = await api('/api/restore', { id, client: data.client });
       edits.clear();
       undo = [];

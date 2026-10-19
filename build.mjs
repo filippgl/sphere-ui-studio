@@ -19,6 +19,7 @@ const files = [
   'chat-core.mjs',
   'hotbar-core.mjs',
   'font-core.mjs',
+  'history-core.mjs',
   'zip.mjs',
   'WINDOWS.md',
 ];

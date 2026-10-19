@@ -77,7 +77,7 @@ test('Ошибка записи второго файла откатывает �
     assert.equal(decode(await read(dir, 'first.ui')), source);
   assert.deepEqual(await store.backups(), []);
 });
-test('Повреждённая копия и изменённый после сохранения файл не проходят откат', async () => {
+test('Повреждённая копия блокирует откат; внешние изменения сохраняются отдельной точкой перед восстановлением', async () => {
   const { root, effects, store } = await fixture(),
     before = await store.catalog();
   const saved = await store.save([patch(before.files[0])]);
@@ -86,8 +86,68 @@ test('Повреждённая копия и изменённый после с�
   await assert.rejects(store.restore(saved.backup), /повреждена/);
   await write(dir, 'first.ui', encode(source));
   await write(effects, 'first.ui', encode(source + '// новая версия'));
-  await assert.rejects(store.restore(saved.backup), /файл менялся/);
+  const restored = await store.restore(saved.backup);
+  assert.equal(decode(await read(effects, 'first.ui')), source);
+  const checkpoint = await child(await child(root, '_interface-editor-backups'), restored.backup);
+  assert.equal(decode(await read(checkpoint, 'first.ui')), source + '// новая версия');
+  await store.restore(restored.backup);
   assert.equal(decode(await read(effects, 'first.ui')), source + '// новая версия');
+});
+test('Выбор старой копии откатывает все последующие файлы; возврат к состоянию до отката восстанавливает их точно', async () => {
+  const { effects, store } = await fixture();
+  let files = (await store.catalog()).files;
+  const first = await store.save([
+    patch(
+      files.find((f) => f.name === 'first.ui'),
+      '300 150',
+    ),
+  ]);
+  files = (await store.catalog()).files;
+  await store.save([
+    patch(
+      files.find((f) => f.name === 'second.ui'),
+      '400 200',
+    ),
+  ]);
+  files = (await store.catalog()).files;
+  await store.save([
+    patch(
+      files.find((f) => f.name === 'first.ui'),
+      '600 300',
+    ),
+  ]);
+  const before = await read(effects, 'first.ui'),
+    secondBefore = await read(effects, 'second.ui');
+  const history = await store.call('/api/history');
+  assert.equal(history.at(-1).revisions, 3);
+  assert.deepEqual(
+    history
+      .at(-1)
+      .files.map((f) => f.name)
+      .sort(),
+    ['first.ui', 'second.ui'],
+  );
+  const restored = await store.restore(first.backup);
+  assert.equal(restored.revisions.length, 3);
+  assert.equal(decode(await read(effects, 'first.ui')), source);
+  assert.equal(decode(await read(effects, 'second.ui')), source);
+  assert.equal((await store.call('/api/history'))[0].kind, 'restore');
+  await store.restore(restored.backup);
+  assert.deepEqual(await read(effects, 'first.ui'), before);
+  assert.deepEqual(await read(effects, 'second.ui'), secondBefore);
+});
+test('Ошибка в середине отката старой ревизии возвращает все записанные файлы к текущему состоянию', async () => {
+  const { effects, store } = await fixture();
+  const files = (await store.catalog()).files;
+  const saved = await store.save(files.map((f) => patch(f)));
+  const before = await read(effects, 'first.ui');
+  const target = await child(effects, 'second.ui', 'file');
+  target.createWritable = async () => {
+    throw Error('Запись запрещена');
+  };
+  await assert.rejects(store.restore(saved.backup), /Запись запрещена/);
+  assert.deepEqual(await read(effects, 'first.ui'), before);
+  assert.deepEqual(await store.backups(), [saved.backup]);
 });
 test('Отказ в разрешении и смена выбранной папки не приводят к записи', async () => {
   const { root, effects, store, record } = await fixture(),

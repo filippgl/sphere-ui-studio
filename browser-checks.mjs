@@ -856,7 +856,7 @@ export async function browserChecks({
   await page.locator('#view-open').click();
   await waitView();
   await page.screenshot({
-    path: path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-studio.png'),
+    path: path.join(fixture, 'studio.png'),
   });
   check(errors.length === 0, 'Браузер работает без ошибок: ' + errors.join('; '));
   await page.emulateMedia({ reducedMotion: 'reduce' });

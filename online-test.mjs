@@ -262,7 +262,10 @@ try {
       for await (const [name] of dir.entries()) names.push(name);
       return names;
     });
-    check(ids.length === 2, 'Резервные копии шрифта и геометрии созданы внутри выбранной папки');
+    check(
+      ids.length === 3,
+      'Копии шрифта, геометрии и состояния перед откатом созданы внутри выбранной папки',
+    );
     check(
       (await fileBytes(`_interface-editor-backups/${ids[0]}/pickpers.ui`)).equals(before),
       'Бэкап сохраняет точные байты Windows-1251 и CRLF',
@@ -290,19 +293,22 @@ try {
     await page.locator('#undo').click();
     await page.locator('#history').click();
     await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
-    await page.waitForFunction(() =>
-      document.getElementById('toast-text').textContent.includes('файл менялся'),
-    );
-    check(
-      await page.locator('#backup-dialog').evaluate((d) => d.open),
-      'Конфликт отката показывается без ложного сообщения об успехе',
-    );
-    await writeBytes('effects/pickpers.ui', savedBytes);
-    await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
     await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
     check(
       (await fileBytes('effects/pickpers.ui')).equals(before),
       'Откат на сайте восстанавливает оригинал в той же папке',
+    );
+    await page.locator('#history').click();
+    await page.waitForFunction(() => document.getElementById('backup-dialog').open);
+    check(
+      (await page.locator('.backup').first().textContent()).includes('Состояние до отката'),
+      'Текущее состояние сохранено и доступно для отмены отката',
+    );
+    await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
+    await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
+    check(
+      (await fileBytes('effects/pickpers.ui')).toString('ascii').endsWith('// external'),
+      'Состояние с внешними изменениями возвращается из автоматической копии',
     );
     check(errors.length === 0, 'Онлайн-версия не выдаёт ошибок JavaScript: ' + errors.join('; '));
     check(

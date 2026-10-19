@@ -4,6 +4,7 @@ import { entries, child, read, write, permission, UploadedDirectory } from './br
 import { zip, download } from './zip.mjs';
 import { resolution } from './layout-core.mjs';
 import { fontDefinitions, prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
+import { backupId, historyEntries, restorePlan } from './history-core.mjs';
 
 export async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
@@ -349,8 +350,7 @@ export class BrowserStorage {
         changes.push({ ...asset, before, beforeHash, afterHash });
       }
       changes.sort((a, b) => Number(!a.scope) - Number(!b.scope));
-      const id =
-        new Date().toISOString().replace(/[:.]/g, '-') + '-' + crypto.randomUUID().slice(0, 6);
+      const id = backupId(await this.backups(), crypto.randomUUID());
       const backupRoot = await child(current.handle, backupName, 'directory', true),
         dir = await child(backupRoot, id, 'directory', true);
       for (const c of changes) if (c.before !== null) await write(dir, backupFile(c), c.before);
@@ -420,24 +420,47 @@ export class BrowserStorage {
   async restore(id) {
     if (!(await this.backups()).includes(id)) throw Error('Резервная копия не найдена');
     const result = await this.exclusive(async () => {
-      const root = await child(this.current.handle, backupName),
-        dir = await child(root, id);
-      const manifest = JSON.parse(new TextDecoder().decode(await read(dir, 'manifest.json')));
-      if (!Array.isArray(manifest) || new Set(manifest.map((f) => f.name)).size !== manifest.length)
-        throw Error('Повреждён манифест резервной копии');
-      const files = [];
-      for (const item of manifest) {
-        if (item.scope ? !validAsset(item) : !this.names.has(item.name))
-          throw Error('Неизвестный файл в резервной копии');
-        const current = await this.optionalRead(item);
-        if ((await this.digest(current)) !== item.after)
-          throw Error(
-            `${item.name}: после этой копии файл менялся. Сначала откатите более новые изменения`,
-          );
-        const bytes = item.before === null ? null : await read(dir, backupFile(item));
-        if ((await this.digest(bytes)) !== item.before) throw Error('Резервная копия повреждена');
-        files.push({ ...item, bytes, current });
-      }
+      const ids = await this.backups(),
+        root = await child(this.current.handle, backupName);
+      const plan = await restorePlan(
+        id,
+        ids,
+        async (revision) =>
+          JSON.parse(
+            new TextDecoder().decode(await read(await child(root, revision), 'manifest.json')),
+          ),
+        async (revision, item) => read(await child(root, revision), backupFile(item)),
+        (bytes) => this.digest(bytes),
+        (item) => (item.scope ? validAsset(item) : this.names.has(item.name)),
+      );
+      const files = await Promise.all(
+        plan.files.map(async (item) => ({ ...item, current: await this.optionalRead(item) })),
+      );
+      const checkpoint = backupId(ids, crypto.randomUUID()),
+        dir = await child(root, checkpoint, 'directory', true);
+      for (const item of files)
+        if (item.current !== null) await write(dir, backupFile(item), item.current);
+      await write(
+        dir,
+        'manifest.json',
+        jsonBytes(
+          await Promise.all(
+            files.map(async (item) => ({
+              name: item.name,
+              ...(item.scope ? { scope: item.scope } : {}),
+              before: await this.digest(item.current),
+              after: await this.digest(item.bytes),
+            })),
+          ),
+        ),
+      );
+      const transaction = {
+        state: 'pending',
+        kind: 'restore',
+        target: id,
+        revisions: plan.revisions,
+      };
+      await write(dir, 'transaction.json', jsonBytes(transaction));
       const written = [];
       try {
         for (const f of files) {
@@ -446,18 +469,25 @@ export class BrowserStorage {
           await this.putAsset(f, f.bytes);
           written.push(f);
         }
+        await write(dir, 'transaction.json', jsonBytes({ ...transaction, state: 'committed' }));
       } catch (error) {
         for (const f of written.reverse())
           try {
             if ((await this.digest(await this.optionalRead(f))) === (await this.digest(f.bytes)))
               await this.putAsset(f, f.current);
           } catch {}
+        await write(dir, 'transaction.json', jsonBytes({ ...transaction, state: 'rolled-back' }));
         throw error;
       }
       await this.refreshFonts();
-      return { restored: files.map((f) => f.name), downloadOnly: this.downloadOnly };
+      return {
+        restored: files.map((f) => f.name),
+        backup: checkpoint,
+        revisions: plan.revisions,
+        downloadOnly: this.downloadOnly,
+      };
     });
-    if (result.downloadOnly) await this.exportChanges(result.restored, id);
+    if (result.downloadOnly) await this.exportChanges(result.restored, result.backup);
     return result;
   }
   async exportChanges(names, backup) {
@@ -574,6 +604,28 @@ export class BrowserStorage {
         return this.discover(body.path);
       case '/api/backups':
         return this.backups();
+      case '/api/history': {
+        const root =
+          this.current && (await child(this.current.handle, backupName).catch(() => null));
+        if (!root) return [];
+        return historyEntries(
+          await this.backups(),
+          async (id) => {
+            const dir = await child(root, id);
+            let transaction;
+            try {
+              transaction = JSON.parse(
+                new TextDecoder().decode(await read(dir, 'transaction.json')),
+              );
+            } catch {}
+            return {
+              manifest: JSON.parse(new TextDecoder().decode(await read(dir, 'manifest.json'))),
+              transaction,
+            };
+          },
+          (item) => (item.scope ? validAsset(item) : this.names.has(item.name)),
+        );
+      }
       case '/api/save':
         return this.save(body.files, body.fontScales, body.fontsHash);
       case '/api/restore':
