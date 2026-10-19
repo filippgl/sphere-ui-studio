@@ -2,7 +2,7 @@ import { createStorage } from './storage.mjs';
 import { anchors, anchorText, placement, fitPlacement, overflow } from './layout-core.mjs';
 import { fontAlias } from './font-core.mjs';
 import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
-import { hotbarInfo, planHotbar } from './hotbar-core.mjs';
+import { hotbarInfo, planHotbar, planHotbarEffects } from './hotbar-core.mjs';
 import { scaleSource, captureScaleBase, validateScaleBase } from './ui-core.mjs';
 const storage = await createStorage();
 let fontPlans = [];
@@ -867,6 +867,8 @@ function inspector() {
             p.insert
               ? editCoords(p.node, p.value)
               : edit(p.node, p.key, p.value, active.file, p.occurrence);
+          for (const p of planHotbarEffects(active.node, readLayout))
+            edit(p.node, p.key, p.value, active.file, p.occurrence);
           editAnchor(active.node, anchorText([anchors(val(active.node, 'alignWin'))[0], 1]));
           edit(active.node, 'position', `${nums(active.node, 'position')[0]} 0`);
           constrainWindow(active);
@@ -876,6 +878,11 @@ function inspector() {
         fit();
       });
       controls.append(dock);
+      if (planHotbarEffects(active.node, readLayout).length)
+        note(
+          'Эффект показа останавливает панель не у края: в игре она встанет выше или левее. «К нижнему краю» исправит эффекты.',
+          'warning',
+        );
     }
   }
   const keys = [

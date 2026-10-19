@@ -10,6 +10,33 @@ export function hotbarInfo(root, read = raw) {
     slots: root.children.filter((n) => /^(SLOT)$/i.test(read(n, 'classID'))).length,
   };
 }
+// Native MOVE_* effects move the window for good: MOVE_LEFT/MOVE_TOP end at
+// position + shift - distance, MOVE_RIGHT/MOVE_BOTTOM at position + shift
+// (`type duration distance shift`, a missing shift is 0). The panel slides in to
+// its docked spot and out over its edge: left edge when vertical, bottom when horizontal.
+function slideEffect(key, horizontal, tokens) {
+  const [, duration = '0.25', distance = '0'] = tokens,
+    show = key === 'showEffect';
+  return horizontal
+    ? [show ? 'MOVE_TOP' : 'MOVE_BOTTOM', duration, distance, distance].join(' ')
+    : [show ? 'MOVE_RIGHT' : 'MOVE_LEFT', duration, distance].join(' ');
+}
+function effectEdits(root, horizontal, read) {
+  const edits = [];
+  for (const key of ['showEffect', 'hideEffect']) {
+    const tokens = read(root, key).trim().split(/\s+/);
+    if (!/^MOVE_/.test(tokens[0])) continue;
+    const value = slideEffect(key, horizontal, tokens);
+    if (tokens.join(' ') !== value) edits.push({ node: root, key, value, occurrence: 0 });
+  }
+  return edits;
+}
+// Repairs panels turned by older versions, which kept MOVE_TOP without the shift
+// and therefore stopped one panel height above the bottom edge.
+export function planHotbarEffects(root, read = raw) {
+  const info = hotbarInfo(root, read);
+  return info ? effectEdits(root, info.horizontal, read) : [];
+}
 export function planHotbar(root, horizontal, read = raw, extraCoords = []) {
   const info = hotbarInfo(root, read);
   if (!info) throw Error('Выберите панель хоткеев quick_items');
@@ -64,16 +91,7 @@ export function planHotbar(root, horizontal, read = raw, extraCoords = []) {
   const patch = (node, key, value, occurrence = 0) =>
     edits.push({ node, key, value: Array.isArray(value) ? value.join(' ') : value, occurrence });
   if (!mirror && !repairOnly) patch(root, 'size', [height, width]);
-  const effects = horizontal
-    ? { MOVE_LEFT: 'MOVE_BOTTOM', MOVE_RIGHT: 'MOVE_TOP' }
-    : legacy
-      ? { MOVE_TOP: 'MOVE_LEFT', MOVE_BOTTOM: 'MOVE_RIGHT' }
-      : { MOVE_BOTTOM: 'MOVE_LEFT', MOVE_TOP: 'MOVE_RIGHT' };
-  for (const key of ['showEffect', 'hideEffect']) {
-    if (repairOnly) continue;
-    const tokens = read(root, key).trim().split(/\s+/);
-    if (effects[tokens[0]]) patch(root, key, [effects[tokens[0]], ...tokens.slice(1)].join(' '));
-  }
+  if (!repairOnly) edits.push(...effectEdits(root, horizontal, read));
   for (const node of root.children.filter((n) => n.kind === 'control')) {
     if (repairOnly) continue;
     const position = read(node, 'position').trim().split(/\s+/).map(Number);

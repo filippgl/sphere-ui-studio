@@ -9,7 +9,7 @@ import {
 } from './layout-core.mjs';
 import { scaleSfn, readSfn } from './font-core.mjs';
 import { chatInfo, planChat, planChatRowHeight } from './chat-core.mjs';
-import { planHotbar, hotbarInfo } from './hotbar-core.mjs';
+import { planHotbar, planHotbarEffects, hotbarInfo } from './hotbar-core.mjs';
 import { captureScaleBase, scaleSource } from './ui-core.mjs';
 import assert from 'node:assert/strict';
 import { inflateSync } from 'node:zlib';
@@ -382,6 +382,29 @@ test('Хоткеи меняют раскладку и UV рамки, сохра�
     walk(horizontal).map((n) => n.id),
     walk(root).map((n) => n.id),
   );
+});
+test('Эффекты хоткеев выезжают ровно до края: у MOVE_TOP/MOVE_BOTTOM сдвиг равен пути', () => {
+  const text = hotbarFixture.replace(
+    'drawMethod SPRITE "frame"',
+    'drawMethod SPRITE "frame"\nshowEffect MOVE_RIGHT  0.25 26\nhideEffect MOVE_LEFT   0.25 26',
+  );
+  const horizontalText = applyEdits(text, layoutEdits(planHotbar(parse(text).children[0], true))),
+    horizontal = parse(horizontalText).children[0];
+  assert.equal(prop(horizontal, 'showEffect').value, 'MOVE_TOP 0.25 26 26');
+  assert.equal(prop(horizontal, 'hideEffect').value, 'MOVE_BOTTOM 0.25 26 26');
+  assert.deepEqual(planHotbarEffects(horizontal), []);
+  const vertical = parse(applyEdits(horizontalText, layoutEdits(planHotbar(horizontal, false))))
+    .children[0];
+  assert.equal(prop(vertical, 'showEffect').value, 'MOVE_RIGHT 0.25 26');
+  assert.equal(prop(vertical, 'hideEffect').value, 'MOVE_LEFT 0.25 26');
+  const brokenText = horizontalText
+      .replace('MOVE_TOP 0.25 26 26', 'MOVE_TOP 0.25 52')
+      .replace('MOVE_BOTTOM 0.25 26 26', 'ALPHA_OUT 0.25'),
+    repaired = parse(
+      applyEdits(brokenText, layoutEdits(planHotbarEffects(parse(brokenText).children[0]))),
+    ).children[0];
+  assert.equal(prop(repaired, 'showEffect').value, 'MOVE_TOP 0.25 52 52');
+  assert.equal(prop(repaired, 'hideEffect').value, 'ALPHA_OUT 0.25');
 });
 test('Сохранённая горизонтальная рамка отражается вверх без перестановки слотов и повторного отражения', () => {
   const legacy = hotbarFixture
