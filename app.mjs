@@ -2000,6 +2000,20 @@ $('scale-window').onclick = guarded(() => {
   fit();
   closePopups();
 });
+$('scale-text').onclick = guarded(() => {
+  if (!active) return;
+  snapshot();
+  const factor = Number($('scale').value);
+  for (const node of walk(active.node))
+    for (const field of node.props)
+      if (field.key.toLowerCase() === 'font')
+        edit(node, field.key, String(scaledFont(Number(field.value), factor)));
+  layers();
+  inspector();
+  updateDirty();
+  closePopups();
+  toast('Изменены только шрифты. Размеры и положение окна сохранены');
+});
 $('scale-all').onclick = guarded(() => {
   if (!active) return;
   snapshot();

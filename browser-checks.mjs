@@ -69,6 +69,17 @@ export async function browserChecks({
   );
   await popup('#scale-open', '#scale-popup');
   await page.locator('#scale').selectOption('1.5');
+  await page.locator('#scale-text').click();
+  check(
+    (await value('Ширина')) === baseWidth && (await value('Высота')) === baseHeight,
+    'Отдельный масштаб шрифта сохраняет геометрию уже увеличенного окна',
+  );
+  check(
+    Number(await field('Шрифт').inputValue()) > 13,
+    'Отдельный масштаб назначает увеличенный SFNT-шрифт',
+  );
+  await page.locator('#undo').click();
+  await popup('#scale-open', '#scale-popup');
   await page.locator('#scale-window').click();
   await waitView();
   check(
