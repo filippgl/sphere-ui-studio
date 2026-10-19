@@ -821,7 +821,20 @@ function inspector() {
           snapshot();
           batchEdit(() => {
             scaleWindow(active, percent / 100);
-            if (chatInfo(active.node, readLayout, data.fonts).rows !== rows) resize(rows, history);
+            // Rows are drawn up from the bottom edge: a pitch below the text height clips the
+            // newest message. chat_st2 text uses the config.cfg font scaled with the window.
+            const scaled = chatInfo(active.node, readLayout, data.fonts),
+              source = data.chatFonts?.list,
+              alias = data.fonts.find((f) => f.id === source)?.asset?.match(/^studio_f(\d+)_/),
+              base = data.fonts.find((f) => f.id === (alias ? Number(alias[1]) : source)),
+              textHeight =
+                chat.name === 'chat_st2' && base?.height
+                  ? Math.round((base.height * percent) / 100)
+                  : 0;
+            if (textHeight > scaled.rowHeight && get(scaled.list, 'rowHeight'))
+              edit(scaled.list, 'rowHeight', String(textHeight));
+            if (chatInfo(active.node, readLayout, data.fonts).rows !== rows || textHeight)
+              resize(rows, history);
             constrainWindow(active);
           });
           finish();
