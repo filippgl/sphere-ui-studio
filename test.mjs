@@ -95,6 +95,16 @@ const request = async (endpoint, body, headers = {}) => {
 };
 let browser;
 try {
+  const pack = (await request('/hd/manifest.json')).data;
+  check(
+    pack.version === 1 && pack.entries.length > 0,
+    'Локальный сервер отдаёт манифест HD как JSON',
+  );
+  const packedTexture = await fetch(url + '/hd/' + pack.entries[0].file);
+  check(
+    hash(Buffer.from(await packedTexture.arrayBuffer())) === pack.entries[0].compressedSha256,
+    'Локальный сервер отдаёт сжатый DDS без изменения байтов',
+  );
   const catalog = (await request('/api/catalog')).data;
   check(catalog.files.length === 87, 'Все 87 файлов читаются');
   check(

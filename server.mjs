@@ -626,13 +626,15 @@ const server = http.createServer(async (req, res) => {
       '/icons-core.mjs': ['icons-core.mjs', 'text/javascript'],
       '/map-recipe.mjs': ['map-recipe.mjs', 'text/javascript'],
     };
-    if (/^\/hd\/(?:manifest\.json|[a-f0-9]{64}\.dds\.gz)$/.test(url.pathname))
+    if (/^\/hd\/(?:manifest\.json|[a-f0-9]{64}\.dds\.gz)$/.test(url.pathname)) {
+      const bytes = await fs.readFile(path.join(here, url.pathname.slice(1)));
       return send(
         res,
         200,
-        await fs.readFile(path.join(here, url.pathname.slice(1))),
+        url.pathname.endsWith('.json') ? JSON.parse(bytes) : bytes,
         url.pathname.endsWith('.json') ? 'application/json; charset=utf-8' : 'application/gzip',
       );
+    }
     if (staticFiles[url.pathname]) {
       const [name, type] = staticFiles[url.pathname];
       return send(res, 200, await fs.readFile(path.join(here, name)), type + '; charset=utf-8');
