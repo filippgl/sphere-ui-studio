@@ -5,6 +5,7 @@ import { UploadedDirectory, child, read, write } from './browser-files.mjs';
 import { encode, decode, prop } from './ui-core.mjs';
 import { zip, crc32 } from './zip.mjs';
 import { readSfn } from './font-core.mjs';
+import fs from 'node:fs/promises';
 
 const source =
   '// Тест\r\nwindowUI\r\n{\r\n windowName "test"\r\n size 200 100\r\n font 3\r\n}\r\n';
@@ -16,6 +17,7 @@ async function fixture() {
   for (const name of ['first.ui', 'second.ui']) await write(effects, name, encode(source));
   const store = new BrowserStorage(),
     record = await store.register(root);
+  store.loadHd = (name) => fs.readFile(new URL('./hd/' + name, import.meta.url));
   await store.select(record.id);
   return { root, effects, store, record };
 }

@@ -11,7 +11,7 @@
   "scripts": {
     "build": "node build.mjs",
     "start": "node server.mjs",
-    "test": "node --test unit.test.mjs browser-storage.test.mjs",
+    "test": "node --test unit.test.mjs browser-storage.test.mjs hd-core.test.mjs",
     "test:client": "node test.mjs",
     "test:online": "node online-test.mjs"
   }

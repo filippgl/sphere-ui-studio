@@ -453,6 +453,7 @@ export async function browserChecks({
   await layer(7)
     .getByRole('button', { name: /^Видимость:/ })
     .click();
+  await page.waitForFunction(() => window.paintedText.some((t) => t.includes('UISTR_WC_ALLY07')));
   check(
     await page.evaluate(() => window.paintedText.some((t) => t.includes('UISTR_WC_ALLY07'))),
     'Принудительный показ скрытого элемента возвращает подпись неизвестного ключа',

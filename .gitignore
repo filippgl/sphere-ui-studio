@@ -3,5 +3,6 @@ test-*.png
 *.log
 catalog.json
 node_modules/
+__pycache__/
 dist/
 *.tar.gz

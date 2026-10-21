@@ -10,6 +10,7 @@ import { rgbaFromDds, png } from './dds.mjs';
 import { resolution } from './layout-core.mjs';
 import { prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
 import { currentIconScale } from './icons-core.mjs';
+import { prepareHd } from './hd-core.mjs';
 import {
   prepareGameAssets,
   configChatFonts,
@@ -296,6 +297,28 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
       const after = encode(applyEdits(decode(before), f.edits));
       changes.push({ name: f.name, before, after });
     }
+    const directoryNames = new Map();
+    const hd = await prepareHd({
+      changes,
+      fontAssets: generated.assets,
+      definitions: generated.definitions,
+      requests: game.hdWindows || [],
+      read: async (scope, name) => {
+        if (!directoryNames.has(scope))
+          directoryNames.set(
+            scope,
+            await fs.readdir(path.join(client, scope)).catch((e) => {
+              if (e.code === 'ENOENT') return [];
+              throw e;
+            }),
+          );
+        const actual = directoryNames
+          .get(scope)
+          .find((f) => f.toLowerCase() === name.toLowerCase());
+        return actual ? optionalRead(path.join(client, scope, actual)) : null;
+      },
+      load: (name) => fs.readFile(path.join(here, 'hd', name)),
+    });
     const extra = await prepareGameAssets(
       game,
       (scope, name) => optionalRead(assetPath({ scope, name })),
@@ -315,10 +338,11 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
           : [],
       },
     );
-    for (const asset of [...generated.assets, ...extra.assets]) {
+    for (const asset of [...generated.assets, ...extra.assets, ...hd.assets]) {
       const before = await optionalRead(assetPath(asset));
       if (
         ['effects', 'xadd'].includes(asset.scope) &&
+        !asset.hdUpgrade &&
         before !== null &&
         digest(before) !== digest(asset.after)
       )
@@ -370,6 +394,7 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
       );
       throw e;
     }
+    imageCache.clear();
     fonts = await readFonts(client);
     return {
       backup: id,
@@ -379,7 +404,9 @@ async function save(files, fontScales = [], fontsHash, game = {}) {
       chatFonts: configChatFonts(await optionalRead(path.join(client, 'config.cfg'))),
       mapScales: await mapScriptScales(await optionalRead(path.join(client, 'mbc', mapScriptName))),
       iconScale: await currentIconScale((scope, name) => optionalRead(assetPath({ scope, name }))),
-      warnings: extra.warnings,
+      warnings: [...extra.warnings, ...hd.warnings],
+      hdTextures: hd.count,
+      savedFiles: changes.length,
     };
   } finally {
     mutation = false;
@@ -594,7 +621,18 @@ const server = http.createServer(async (req, res) => {
       '/hotbar-core.mjs': ['hotbar-core.mjs', 'text/javascript'],
       '/font-core.mjs': ['font-core.mjs', 'text/javascript'],
       '/history-core.mjs': ['history-core.mjs', 'text/javascript'],
+      '/hd-core.mjs': ['hd-core.mjs', 'text/javascript'],
+      '/game-core.mjs': ['game-core.mjs', 'text/javascript'],
+      '/icons-core.mjs': ['icons-core.mjs', 'text/javascript'],
+      '/map-recipe.mjs': ['map-recipe.mjs', 'text/javascript'],
     };
+    if (/^\/hd\/(?:manifest\.json|[a-f0-9]{64}\.dds\.gz)$/.test(url.pathname))
+      return send(
+        res,
+        200,
+        await fs.readFile(path.join(here, url.pathname.slice(1))),
+        url.pathname.endsWith('.json') ? 'application/json; charset=utf-8' : 'application/gzip',
+      );
     if (staticFiles[url.pathname]) {
       const [name, type] = staticFiles[url.pathname];
       return send(res, 200, await fs.readFile(path.join(here, name)), type + '; charset=utf-8');

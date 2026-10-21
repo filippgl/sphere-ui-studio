@@ -1,0 +1,2739 @@
+{
+  "version": 1,
+  "scale": 4,
+  "method": "Real-ESRGAN; source-derived alpha and fixed native coordinates",
+  "entries": [
+    {
+      "sourceSha256": "00c31849ee5f573d8e4ad4c9c6eb349a074c9291ce1d17bcb276607aa54c9446",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm041"
+      ],
+      "sha256": "4354fd81a3aee88601bd50ed9356afffa5ae6918386c994f7715b5d2804b2e5e",
+      "file": "4354fd81a3aee88601bd50ed9356afffa5ae6918386c994f7715b5d2804b2e5e.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2264461,
+      "compressedSha256": "16f6cfb7e25205f1f8a9ca4ec31a48059423c3283acdb253fae7a2ddb8508cd7",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "01415f9c2fcb87241933846650a5fb08e925fe2d86450ab3cf1b10ee9d5a31bc",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm012"
+      ],
+      "sha256": "7968b49d8c6db78e395a6b8651c5e1ff17e8edd0bf835a9053ac31cc1f18759f",
+      "file": "7968b49d8c6db78e395a6b8651c5e1ff17e8edd0bf835a9053ac31cc1f18759f.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1990055,
+      "compressedSha256": "259f7b20309242c0ce0c283162580b63697bcaedefb573e296ad28e563fec4e7",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "0250599663589ec737cb06ac6ebdf9b4160b606c4cd35e6f6009cd547dd0347c",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_stat3"
+      ],
+      "sha256": "e5843dc3fb0e727e5425b70ac2b11aa7338ed946f3cc5924df026af732571371",
+      "file": "e5843dc3fb0e727e5425b70ac2b11aa7338ed946f3cc5924df026af732571371.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1400763,
+      "compressedSha256": "a2c63507e11dabccddac4fd48231893f1d5d69260300db15c35cfeef1a4420ef",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "06a053f9f78744c0b4a82e2db9cfa59a06f4bedcb203c0d8e751cb98de9a2726",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_fb03"
+      ],
+      "sha256": "8dd90e16143761e97cd082af2b3eb2aaf638b3e4abfdb147c7b37751a6a699f8",
+      "file": "8dd90e16143761e97cd082af2b3eb2aaf638b3e4abfdb147c7b37751a6a699f8.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 441228,
+      "compressedSha256": "213882c5987a6e1aaa7918fd808e2934949e53d6348f72cc7a8e1240098eb258",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "0df9e4561e966d3434d7b45d74677b0edad3ab760aa83a032937ab2cab4ebdd8",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_nmap"
+      ],
+      "sha256": "0f4bec81c0c06400130d477b99367e4329b79eff654524a8729caf2342f540fa",
+      "file": "0f4bec81c0c06400130d477b99367e4329b79eff654524a8729caf2342f540fa.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1941136,
+      "compressedSha256": "70ba0f6c6b42b2a212bb0218c2a3bb2f07e0bb8e4e531a1bee903125d159202b",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "10292d279d6e27fe0366ffc4dace821bed6364b136505487756a0262912429dd",
+      "sourceSize": [
+        32,
+        32
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "yellow1"
+      ],
+      "sha256": "41303ae5471f2ec73af4cf31af652ff3dd3e853437d1e3f0bca034f5285a94dd",
+      "file": "41303ae5471f2ec73af4cf31af652ff3dd3e853437d1e3f0bca034f5285a94dd.dds.gz",
+      "bytes": 65664,
+      "compressedBytes": 14446,
+      "compressedSha256": "65d1fbb59f1ee0dd1e6fb0d79f57f62f67429240ecf9c1559c525ae5a29162b3",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "12776b88a9266f3e130e88e839b9ef452bb6bf746598608629b28371a9f4038e",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "map01"
+      ],
+      "sha256": "5bb93ba9caa548c8edc0bb4c9b92ad6c2d6f172378c27c754228be854b24534f",
+      "file": "5bb93ba9caa548c8edc0bb4c9b92ad6c2d6f172378c27c754228be854b24534f.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1889012,
+      "compressedSha256": "4e692c1b2103ff03264228c7a058829982c406c40dbfaefb20866b6e6bebd99d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "186950fa2dc21a49312e109b3cd5b8bb446cc3c7abc77257e666bdf30f9f5d26",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "map03"
+      ],
+      "sha256": "bb18c9db22baaea29c5b1bc1064d82495e03e2f60b71a49e2a3bd32a62c4f1a0",
+      "file": "bb18c9db22baaea29c5b1bc1064d82495e03e2f60b71a49e2a3bd32a62c4f1a0.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 431587,
+      "compressedSha256": "87611719bfe3318c89db67eeffe76b811ff77b8f2ad5b5f5abcc083549505004",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "19d4366dd2c6f49d670a649189ca882b502e64c44df0408e7f9f49e84b212cb4",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm053"
+      ],
+      "sha256": "3792229a2c2cc1b5a0952de0a4e9648e1e67ae8431b6b2c59b19b05bca6e6f7f",
+      "file": "3792229a2c2cc1b5a0952de0a4e9648e1e67ae8431b6b2c59b19b05bca6e6f7f.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 410407,
+      "compressedSha256": "74283f4dfc6fe35ce1cb35f05f031f631388606bddaec1ad56866978d4211729",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "1c000421bf699bb86aaff9bf0aa6a20ae96488faaaf8f14d4cb5abea0c66bfc8",
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "size": [
+        4096,
+        4096
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_builder"
+      ],
+      "sha256": "1246924c5aace7d3e2d9f4e03fbb3af5973bc80cf4f1471ffcfa9a1746ab9399",
+      "file": "1246924c5aace7d3e2d9f4e03fbb3af5973bc80cf4f1471ffcfa9a1746ab9399.dds.gz",
+      "bytes": 67108992,
+      "compressedBytes": 12721638,
+      "compressedSha256": "e1c12eded0d3efe9e3435f8722425913fb28608be6775ac034143e3020f71963",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "230773404f1f970142a84c197d89f57158d13926119e7788001c9cd662b01e0a",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_inf01"
+      ],
+      "sha256": "d841d356030f7416d53a7a041c50ab79569ad2c6a4e58ad5877014cbcfb06db3",
+      "file": "d841d356030f7416d53a7a041c50ab79569ad2c6a4e58ad5877014cbcfb06db3.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 729899,
+      "compressedSha256": "a288f2b0c019d3a9d64c0b036497048efd1061d34a929c65a9f026eff2b7f6de",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "28c7259e45bffe9f6cd7fd870af7268a984159acbdfce6c63eeef063ea35b178",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_stat2"
+      ],
+      "sha256": "0ad017c781ac49555540e48c1785ecfb2b27c146b254a9b769437ef46ad9640b",
+      "file": "0ad017c781ac49555540e48c1785ecfb2b27c146b254a9b769437ef46ad9640b.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2070805,
+      "compressedSha256": "f6e3a5ddbde5de40e645a1d4bda71d8b00ff1d73ab1e843fc2402f09002e77a0",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "2a6557bddfe8e63fca53101cc1a6c5bd92bc7d8377d2a7b27315e81eb25dbd8e",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pick03"
+      ],
+      "sha256": "1ae583b7bb99299ae6c8f7b1099eb4a5be09476f8c0bf59fc19a5f39c1dc3ee7",
+      "file": "1ae583b7bb99299ae6c8f7b1099eb4a5be09476f8c0bf59fc19a5f39c1dc3ee7.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1933132,
+      "compressedSha256": "1b9b097684abade078cb317e87eef43ab8bf7e8cc52747f1a6a6f7aa8f23071c",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "2b6650c075505b8e769bc79d385cd4c3d0a55d2e623f9cd7478df9b8332b56e6",
+      "sourceSize": [
+        512,
+        256
+      ],
+      "size": [
+        2048,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_msg_large"
+      ],
+      "sha256": "bcf1800ea1ef4566f70468ee9daeda301c54229578282ece7bb51d9effaea296",
+      "file": "bcf1800ea1ef4566f70468ee9daeda301c54229578282ece7bb51d9effaea296.dds.gz",
+      "bytes": 8388736,
+      "compressedBytes": 2762834,
+      "compressedSha256": "85ebaecebd46656f5b455539553ed41feec76be532a5596ee5d83875f0ca51e6",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "2c4e2be497a11f71d6f6ce0b8b4adbeccb077d4fae9ae72a2df26aaa98a65d74",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_fb01"
+      ],
+      "sha256": "75829ba354c32fc11e0f4b34663171986fed0754c3c17e658c12ddde751346d1",
+      "file": "75829ba354c32fc11e0f4b34663171986fed0754c3c17e658c12ddde751346d1.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1879489,
+      "compressedSha256": "6438230c8e08c13e9fd97a09e42ce8c1bf73b446fa6ab88aac949b68210079fe",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "2cb697defd9d65ad2fbf29dcd0aff9f6ddc4428555678e35023826c45775c3da",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm013"
+      ],
+      "sha256": "a23f2cb226e2d24fafcc667fec0f4e26c1f2d05b9eec39ec8410cbd8dab5343a",
+      "file": "a23f2cb226e2d24fafcc667fec0f4e26c1f2d05b9eec39ec8410cbd8dab5343a.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 546817,
+      "compressedSha256": "d9cc445ca63c0515d68f4b4fa12af5d493c79b416ceaf5db45834cb876501542",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "2ea27da9b51f500f2a22f2056a3731fbeddd4fbc52dde5b3703abb6f84860811",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_rd01"
+      ],
+      "sha256": "2c1befbb7545c4f4ffe23cc9095a944112f54d19f02db48439d2d6ecccdf5635",
+      "file": "2c1befbb7545c4f4ffe23cc9095a944112f54d19f02db48439d2d6ecccdf5635.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2055147,
+      "compressedSha256": "82286f82e17cc8b36532784e4a1b29689a29f66edc891482ea5ba4de6e1be9d7",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "31721514bb7ca4912885d9dc6a32cee7f9327986a91432b03a9a74ebe0acd727",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm011"
+      ],
+      "sha256": "8c40943c332afbbc22901d4a1082cc386ca94e86fd8f11d4c6a2836acbf56ecb",
+      "file": "8c40943c332afbbc22901d4a1082cc386ca94e86fd8f11d4c6a2836acbf56ecb.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1615681,
+      "compressedSha256": "2a8a2b12b61c844c925748281cecd721d1cfdb23fc96d9532ce5723cb0cf6aeb",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "3486ae5b48e47f1633f6dd7d314a59817172afe2923be04f6ea8ef7727c2d172",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm051"
+      ],
+      "sha256": "4809889c58dc0b3d247bdd7bf9e26114283bd846f44dc844efc7b8a46f1f6711",
+      "file": "4809889c58dc0b3d247bdd7bf9e26114283bd846f44dc844efc7b8a46f1f6711.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1906941,
+      "compressedSha256": "1b3086c291390fa784b6d248e8460d9b473cba60a74b4dff18a90dd1081bb91d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "371ea0fa0981af1055017c0f552bbe0ddb4eb73a299ec03bf0d26aac49b60b18",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere3"
+      ],
+      "sha256": "c269c9946791adcfb37076839e5341204cd4301bee9af18095ea55288703534d",
+      "file": "c269c9946791adcfb37076839e5341204cd4301bee9af18095ea55288703534d.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 212903,
+      "compressedSha256": "19e035584a1a5e950738021d83aa6b85b7b84d8ac424b7093144ef620cb8097d",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 108
+    },
+    {
+      "sourceSha256": "3811563247a79988ee4730403953dbcec9b50b4c0507dca907efc65dfc431c28",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm023"
+      ],
+      "sha256": "9790742189f3c464c8f420e4433f4f93ae9b527356d7754a0d4b445b2d1b04dd",
+      "file": "9790742189f3c464c8f420e4433f4f93ae9b527356d7754a0d4b445b2d1b04dd.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 396226,
+      "compressedSha256": "4d4eca50310b745a97ec34e16d33e7ff5588cd496677d6698acba666d08d8aef",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "44b1b532335042d874824bf82875429c13ec6c30fcf23952a30ea11a0b6b4158",
+      "sourceSize": [
+        256,
+        512
+      ],
+      "size": [
+        1024,
+        2048
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_trade"
+      ],
+      "sha256": "9a914162dfbcdb282ec198248675bc1fb0e0c15d8d2dbbeeb08ee9331892d5f0",
+      "file": "9a914162dfbcdb282ec198248675bc1fb0e0c15d8d2dbbeeb08ee9331892d5f0.dds.gz",
+      "bytes": 8388736,
+      "compressedBytes": 2799484,
+      "compressedSha256": "ce600d2c47bb3380c9e4c36decfa0b0f42fd913a43c758895c6d1a43bc6819c4",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "45a5999488a67addab6fd7f57b3f25d61df9149086350027fd30c45488d7495d",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere8"
+      ],
+      "sha256": "7f34946ae0b921f6fc3357b701f3918262aa9d580621fd00e4880c34d45e1d4e",
+      "file": "7f34946ae0b921f6fc3357b701f3918262aa9d580621fd00e4880c34d45e1d4e.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 244886,
+      "compressedSha256": "4df897ff89df837ca02e53cb37ec07625370de0a502af9ab5039d46b67f1349a",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 123
+    },
+    {
+      "sourceSha256": "4a951b9dfdfeb0c8dbdef06745f7241aa3e26c9019ce66b463967dce5b65c410",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm022"
+      ],
+      "sha256": "b150d907c1b495f5ce7f26fd5ebb5bf97c84db55cc1e1299f75982a2e95d9f40",
+      "file": "b150d907c1b495f5ce7f26fd5ebb5bf97c84db55cc1e1299f75982a2e95d9f40.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1744956,
+      "compressedSha256": "8409dedf00404bed1f5e363de98b2910c862a030e232a154c3e835620542b1f5",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "4ce76a3df632bd62397e8ea19fe7b9984b1669f2733746e31bbe4e84b71fd13d",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_mantra"
+      ],
+      "sha256": "ca660e1e0c52c8e1975556789f2fa06cc82932ef10f4ede30582e82a9c678a22",
+      "file": "ca660e1e0c52c8e1975556789f2fa06cc82932ef10f4ede30582e82a9c678a22.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1926487,
+      "compressedSha256": "a7f00a33d255dd11420a27d0c2e410e85783623e556ee398e581ca51d4e9e8e6",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "541759431995005ca4c6b8c7a0920356664eb7f166066959cca7e284f6b37a77",
+      "sourceSize": [
+        32,
+        32
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "st_shield21"
+      ],
+      "sha256": "20ee2bed070100f7840d8493c2cf88ea948ef14ce2d776b1b7992a88c1973a16",
+      "file": "20ee2bed070100f7840d8493c2cf88ea948ef14ce2d776b1b7992a88c1973a16.dds.gz",
+      "bytes": 65664,
+      "compressedBytes": 44528,
+      "compressedSha256": "20fb9eb2490f26aba300ff4dc8f36a50b505aaa0b145abba49aeda81f01bf237",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "557e897d6491e81ff0dab5c80639ba5379c5266d6fc8385ce3a5446085923765",
+      "sourceSize": [
+        512,
+        256
+      ],
+      "size": [
+        2048,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_helpwide"
+      ],
+      "sha256": "caeb03082cbb9259c3db43fdf7f7bd8d97413602979af5863af17db1e349e900",
+      "file": "caeb03082cbb9259c3db43fdf7f7bd8d97413602979af5863af17db1e349e900.dds.gz",
+      "bytes": 8388736,
+      "compressedBytes": 2708063,
+      "compressedSha256": "adfd3dfe0132c09a87583c21f342ac6320165ad92e9f35e41db5fac6f93432f8",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "5606b718dfc38c20cd076adc4a06a772c57ca2b7f4cdf481f1fe6e7a40871e8f",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_inf02"
+      ],
+      "sha256": "65aeaa757859dd33d5e9284f27f1cf1eae36c9b221fcbc2afd7c31d50ad47776",
+      "file": "65aeaa757859dd33d5e9284f27f1cf1eae36c9b221fcbc2afd7c31d50ad47776.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 692332,
+      "compressedSha256": "9feb70cf19e7f76ddd76aa7591b7cfb4f9bcdbf994dccce94b2d7104fe13c6ac",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "58016f87149b91e7988403823c3c6c026f012202d41d9f8fb867c1e02a328ffc",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm022"
+      ],
+      "sha256": "56a9971dde0cecd78cf274ecd6999404823be4b567f6fe5dcaef7ecea08f920a",
+      "file": "56a9971dde0cecd78cf274ecd6999404823be4b567f6fe5dcaef7ecea08f920a.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1988814,
+      "compressedSha256": "49959fb5fb076b84e1698c5c76f4ff310989e57983701d2895a3cf66bbd7a279",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "5865ca7eea933d41607d2a5835db9c74b65286d7875e4de29ae81420c38470fb",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_help"
+      ],
+      "sha256": "f357d175ed04582d2a572f27afa815ec885e1be22630d1b8591ebcad8c437f59",
+      "file": "f357d175ed04582d2a572f27afa815ec885e1be22630d1b8591ebcad8c437f59.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1830763,
+      "compressedSha256": "6cd99be8fe62b30edff3009f6ced1fb2e33c52ce10c4b2ce9bf20256177b25c1",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "58f4384ffbdc191a2d68a501ed047481b58f05ee2e246f98c1a562d76f53b394",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_fb02"
+      ],
+      "sha256": "a82970586d420834091dd6fad86f664a1db3f77b396f6b8f4d65b54cd9098966",
+      "file": "a82970586d420834091dd6fad86f664a1db3f77b396f6b8f4d65b54cd9098966.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1819479,
+      "compressedSha256": "aafbf65a10fca73301dc45ce2f96e6299734b847f03624e9ede01b7d56ec3273",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "5d968bcd2327035daf69c5714c4afd733e8448d5ce7fe254557f95581fbf5ab0",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_trade2"
+      ],
+      "sha256": "cc67031fd6c6b9ac44712fc6a24178dda58ff1fcd52b5142122700b08cf0f2cd",
+      "file": "cc67031fd6c6b9ac44712fc6a24178dda58ff1fcd52b5142122700b08cf0f2cd.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1669032,
+      "compressedSha256": "a2aad5b8160579b3943cb32766d617671dc9896dc10769fe3f443a433a950f3d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "5db9e8642be11aee73b6f8c6f3d724aac2e86e189aa885c705528e59d8378d0d",
+      "sourceSize": [
+        32,
+        32
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "black"
+      ],
+      "sha256": "d8224cb717997da422c3c2faf54444534e9111bd00538e94ab6a26f027a911b1",
+      "file": "d8224cb717997da422c3c2faf54444534e9111bd00538e94ab6a26f027a911b1.dds.gz",
+      "bytes": 65664,
+      "compressedBytes": 168,
+      "compressedSha256": "e148c0ccfed9bd8d92355d839cf77649f6339b3ea58d546c87035a4628591a2d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "6263a6149411301468a8b3c00f157b87951be73b37a741a14c3b8c177eb61e6a",
+      "sourceSize": [
+        256,
+        512
+      ],
+      "size": [
+        1024,
+        2048
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "tmnt"
+      ],
+      "sha256": "85342adaade83be5567ac74c5a1d98b7563ec734c12171e8f752b5415090cf51",
+      "file": "85342adaade83be5567ac74c5a1d98b7563ec734c12171e8f752b5415090cf51.dds.gz",
+      "bytes": 8388736,
+      "compressedBytes": 1751174,
+      "compressedSha256": "8e2dbe0cf8998a31a94d359c201cb63c8a153fdb79a4251363ad8abd7dd8b968",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "626c3ef6bc32832a99f04de1ee6ca79883466ec2f6c622a3c4137bfc09245bbf",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm043"
+      ],
+      "sha256": "740354566ff64b16dd52fa898059a2a7690f9cb53555e3528a745fb3060ac474",
+      "file": "740354566ff64b16dd52fa898059a2a7690f9cb53555e3528a745fb3060ac474.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 449961,
+      "compressedSha256": "6c116aa02bf7942484a7162f23898710ecfe1ef0223a8b98555700e05d8c844a",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "646f309974e3cf16be2ff671e786f8a0cc92a2cd1638d826e2497b24fb99fd53",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere6"
+      ],
+      "sha256": "6ad252fa2632829a98e74e3930594d4f6bfda5170bfc0e19756dfd432c743bf0",
+      "file": "6ad252fa2632829a98e74e3930594d4f6bfda5170bfc0e19756dfd432c743bf0.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 229128,
+      "compressedSha256": "261d180eeb69341d99243c115411c6f1e4ecc2c8b82b4e01b3c49d87f1300611",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 114
+    },
+    {
+      "sourceSha256": "697e6ae0dc97724354f3c9e71f7bb37e09632746a3598936c3bcb2091d72789c",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm012"
+      ],
+      "sha256": "dec057b45607cf93e149713001242efb46b428998e47b0a91fa4059ed6e5d78f",
+      "file": "dec057b45607cf93e149713001242efb46b428998e47b0a91fa4059ed6e5d78f.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1744232,
+      "compressedSha256": "34124e4fea1e4d00f79fc67dde15f943362a18c1907963f0b9ffd34593a0a8da",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "6cf5fedf9ec22931277de7a5df8b2799b19125c9c1da8d1ee82c48daadb63096",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_comp"
+      ],
+      "sha256": "a18c8445a95b99a45db981de8e5b0ca86a95bd8d6f76ccfba79442721ce324c2",
+      "file": "a18c8445a95b99a45db981de8e5b0ca86a95bd8d6f76ccfba79442721ce324c2.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2218696,
+      "compressedSha256": "0fcc3d461bbe3fdbce09a6677202d9637c07ea3a889f125121e5ccaae4dcb3e1",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "6ebfc3941345e1b8f726544b3fedacb7403bdf34d1aeb0b9b28cd4af6198790e",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere9"
+      ],
+      "sha256": "7ac5a834a91a7844cb1f6387e3d3968e6388797fc976598e88e6218b16475eaa",
+      "file": "7ac5a834a91a7844cb1f6387e3d3968e6388797fc976598e88e6218b16475eaa.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 211327,
+      "compressedSha256": "23e2e7499ef884cfa547fefc68d4c1afa1a2119ff1a85dfea372d6be83077a7c",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 110
+    },
+    {
+      "sourceSha256": "6f3549cd5382001e91406b675429e13cfa449a8efd235950f453ec263026dc2b",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_hm01b"
+      ],
+      "sha256": "fa9c87625e9e1e62149abc6f3021385664c9b254ad777b61a4e2c373ae6a7a96",
+      "file": "fa9c87625e9e1e62149abc6f3021385664c9b254ad777b61a4e2c373ae6a7a96.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1729173,
+      "compressedSha256": "144eb0bcf863dc3436712905f036fe5d5ebaaef30515d4d1a9129417b8d8c211",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "70047ee856f796c4efdf0a627f07a984b1e8af8cbb445c8f53f851b5f36da791",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_hm01c"
+      ],
+      "sha256": "4721afb1128cf7260f3c7a3484a4534a8af12e35efec0b3c4975c35833f858f3",
+      "file": "4721afb1128cf7260f3c7a3484a4534a8af12e35efec0b3c4975c35833f858f3.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 410974,
+      "compressedSha256": "78c5c42cb40db27928d348f75784856c4e6135515375db09ddca58a7a043e667",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "70182a82fae79f3821e83b7724f3ace7fca6a6a9f25063775549b6838d6eb61a",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_map"
+      ],
+      "sha256": "8ae63c97c5bb7218651a104984fa973027c7035857550e27ecc3902b0b79ddf3",
+      "file": "8ae63c97c5bb7218651a104984fa973027c7035857550e27ecc3902b0b79ddf3.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1939283,
+      "compressedSha256": "2908276a3b73a2279ef6930a45e1c3340a9fe87675e14eeeaea27ab966840f54",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "70defda443c30c8212608b618d2f59795f04856f25f7024a84aa1149af1fe7f4",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_miss"
+      ],
+      "sha256": "4d09afaa66c0083d28321a13dad31ea97415a4c3b92a8289b9ec002ab2bfc6bf",
+      "file": "4d09afaa66c0083d28321a13dad31ea97415a4c3b92a8289b9ec002ab2bfc6bf.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1611773,
+      "compressedSha256": "7fb2035e171d2034e02ac2bb7173ae18c5891ace1dd5bdc70647cd968feafce9",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "7614d86419ecbdeda6069ae26827e649ec1a63da6ce19ba717466f582be17ac5",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pick02"
+      ],
+      "sha256": "61c9c4f5cf732b9510bb24597b3067b90adc999da30e45c9b9c1ea76b0c217ec",
+      "file": "61c9c4f5cf732b9510bb24597b3067b90adc999da30e45c9b9c1ea76b0c217ec.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1468326,
+      "compressedSha256": "e49b635f41adbf7b422fc6f2981066111554e99e9ff4f5242eeb3e8a23427dc2",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "7671872fa867a355ba46095a7b0631c4e7a7446a0e26047e5ca935c3a460a0e0",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere0_d",
+        "fnt_sphere0_f",
+        "fnt_sphere0_p",
+        "fnt_sphere0_spa"
+      ],
+      "sha256": "c2fc8fbcd3be711fa4c0bab94d6cd45f92fe77c891579a8b6b60a9f6f4afddb2",
+      "file": "c2fc8fbcd3be711fa4c0bab94d6cd45f92fe77c891579a8b6b60a9f6f4afddb2.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 92268,
+      "compressedSha256": "5f68ad02c5afca872c69f62c064f1fbe3ec18cc03488abe160238373f1d3fe9b",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 159,
+      "fallbackGlyphs": 91
+    },
+    {
+      "sourceSha256": "79d010c8a24894d25183c1943ba6502cf4432afa5e49520d9ecc4706b171e63e",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_rd03"
+      ],
+      "sha256": "7de997756837a8c1e35b5bac62da0b7de48ad77041b40c31e8b9559d8398be4e",
+      "file": "7de997756837a8c1e35b5bac62da0b7de48ad77041b40c31e8b9559d8398be4e.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 424537,
+      "compressedSha256": "2bb764e7e227f1afeb62d63c250074cee628e3346879b6b8f14aa54a07795c92",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "7d7297c6377887f6b4a1cf831abdcb8e97a432a5ac3e6d4c4ef1e31709da0dd8",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm032"
+      ],
+      "sha256": "705c5b20833e9c0b099a32136a14bb5f4dca0421c6528d79fbd05cdb85d67b5f",
+      "file": "705c5b20833e9c0b099a32136a14bb5f4dca0421c6528d79fbd05cdb85d67b5f.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1918274,
+      "compressedSha256": "dfd6fd0a43e562a463ffdbc9112c21f7ca902295f47aab9cee8708cbc49e6f5b",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "7ff9db619ffe2407234302ece0cf8df8345b41254af06bd1f6083d7aab172b60",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm032"
+      ],
+      "sha256": "e67d38f079c64d61070bac8808ebef0ad9160d44d59b0b1a2419337417aa20b3",
+      "file": "e67d38f079c64d61070bac8808ebef0ad9160d44d59b0b1a2419337417aa20b3.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1731374,
+      "compressedSha256": "4fe4eacae54f33e7af9b5c8b67d8bdfecd9615478835344d021aa4a2ddc8b931",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "80a7bc00817e93638fdacd50c5724d07e094b2a64ea94848e39b8569d049a38a",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pup1"
+      ],
+      "sha256": "5c55837f8e469bfec287abb09c12d6a1d3adaa03518b063985230f45cc365b05",
+      "file": "5c55837f8e469bfec287abb09c12d6a1d3adaa03518b063985230f45cc365b05.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1557903,
+      "compressedSha256": "da3453b7a24b722b1b4ca5c66b7f9f0a9d0c1dea8ec0ff34f52a73b10e59f21f",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "888fd5a0c3047f3603b17df52c6286813ce3cf14756c6b8ed93e14d555733aec",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_journal"
+      ],
+      "sha256": "9e50c47f134b33cd10d7e627e5a347cdcd4226611313ff3ba52637a27a841bfc",
+      "file": "9e50c47f134b33cd10d7e627e5a347cdcd4226611313ff3ba52637a27a841bfc.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1866989,
+      "compressedSha256": "961141698f15c12615608a29d57a3bc80923089e8a1c9441ebabbf53404ea426",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "8ba1343f25c0caf7752178c97fa8853a21843cd42941e1703647b5ae2454e0f1",
+      "sourceSize": [
+        16,
+        16
+      ],
+      "size": [
+        64,
+        64
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "ic_money"
+      ],
+      "sha256": "41a7ee2c24c01c6b3745f9249ffc614a0a32374357b6191b2d769f1b442d9548",
+      "file": "41a7ee2c24c01c6b3745f9249ffc614a0a32374357b6191b2d769f1b442d9548.dds.gz",
+      "bytes": 16512,
+      "compressedBytes": 10795,
+      "compressedSha256": "a6e649352a68f61dacff1a5f70a4ede90f478421179029cb6e0cf8d5ea591f7c",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "8fc5bb316dd7a545e54e17c739375cf571361f5510276d677f58bb4d2fe391f8",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_context_menu"
+      ],
+      "sha256": "40309d4f35d6234a84e444033950ee1c9c72969d135e509324affdc8d83e4e10",
+      "file": "40309d4f35d6234a84e444033950ee1c9c72969d135e509324affdc8d83e4e10.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 675508,
+      "compressedSha256": "f74e5b665b63b412d90f493ee91db39652cd829af8dfeab0eddffab0a230b2f6",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "8fd9c6b7ade19726b9c46caec12c2bb079a488c6e3e216999e0ec7d2267041ba",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm041"
+      ],
+      "sha256": "e762e347dc6268ec901877e8014cb3edb712a06b09d7f4e2775bccb0eae2ba2e",
+      "file": "e762e347dc6268ec901877e8014cb3edb712a06b09d7f4e2775bccb0eae2ba2e.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1848481,
+      "compressedSha256": "d3ab24854b6dd9f47f13cf195739385f7bc496e73b11b67db9ced22c8201cc64",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "93014feff205186f315cb057a6222e400237a81871cc064684e918918ab0a035",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm033"
+      ],
+      "sha256": "bfd04614ebecc9594a6d7b589756c5b173defc10cca36a6d46f8a83aad57fde7",
+      "file": "bfd04614ebecc9594a6d7b589756c5b173defc10cca36a6d46f8a83aad57fde7.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 405610,
+      "compressedSha256": "1c3d9df4ce752740ab8acd4c6e277dcfc50d253edefc520a1aae43bb7d1affb1",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "93995bc88721b6bc86ac73470f3abf2b80c73c00f0f83fd345673aa3596b50e0",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm013"
+      ],
+      "sha256": "d41befbf733d1e6cb8b29bd8130f9a1e074eca8de24999776199e43d75a4d042",
+      "file": "d41befbf733d1e6cb8b29bd8130f9a1e074eca8de24999776199e43d75a4d042.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 425848,
+      "compressedSha256": "e419e0feb63e17760387cb69d7ca4ab617adb8148a8fff4424dcc9dfff4c3488",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "93d34ba4713300f60679da1c7089f003e4df50172e2bb9a61878403fdcaf0acf",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm023"
+      ],
+      "sha256": "edab35b111135b625366ca1135287c2429786ec7d5d7cc9d3b17862e813cec6b",
+      "file": "edab35b111135b625366ca1135287c2429786ec7d5d7cc9d3b17862e813cec6b.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 456725,
+      "compressedSha256": "7c23d16c6ffde030570be054164efd6dee207ef796b32856a8a11048f980cd91",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "99dbd1b2b66db964dd461514acd4f0655bb881a599c8632304d02ca6e8498e7b",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_nmap_gt"
+      ],
+      "sha256": "365d07d471275413531cffe5063ce9c5ef1468da2e502057dd705ba4fa6500aa",
+      "file": "365d07d471275413531cffe5063ce9c5ef1468da2e502057dd705ba4fa6500aa.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2063062,
+      "compressedSha256": "fe4f2f7298eeb372c1e13368a33e83ed940b296ab00a9a3bf1577becceb7b2bc",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "9ad61aed5669a13c12c9bcb576440650dc3ec87301b84a01a193913cb7fd0f05",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere10_d",
+        "fnt_sphere10_f",
+        "fnt_sphere10_p",
+        "fnt_sphere10_spa",
+        "fnt_sphere11_d",
+        "fnt_sphere11_f",
+        "fnt_sphere11_p",
+        "fnt_sphere11_spa",
+        "fnt_sphere1_d",
+        "fnt_sphere1_f",
+        "fnt_sphere1_p",
+        "fnt_sphere1_spa",
+        "fnt_sphere2_d",
+        "fnt_sphere2_f",
+        "fnt_sphere2_p",
+        "fnt_sphere2_spa",
+        "fnt_sphere3_d",
+        "fnt_sphere3_f",
+        "fnt_sphere3_p",
+        "fnt_sphere3_spa",
+        "fnt_sphere4_d",
+        "fnt_sphere4_f",
+        "fnt_sphere4_p",
+        "fnt_sphere4_spa",
+        "fnt_sphere5_d",
+        "fnt_sphere5_f",
+        "fnt_sphere5_p",
+        "fnt_sphere5_spa",
+        "fnt_sphere6_d",
+        "fnt_sphere6_f",
+        "fnt_sphere6_p",
+        "fnt_sphere6_spa",
+        "fnt_sphere7_d",
+        "fnt_sphere7_f",
+        "fnt_sphere7_p",
+        "fnt_sphere7_spa",
+        "fnt_sphere8_d",
+        "fnt_sphere8_f",
+        "fnt_sphere8_p",
+        "fnt_sphere8_spa",
+        "fnt_sphere9_d",
+        "fnt_sphere9_f",
+        "fnt_sphere9_p",
+        "fnt_sphere9_spa"
+      ],
+      "sha256": "53d5309d3adbcc4b9ad5271e10eadba480bde9d647bac1a559998f96bfce12c7",
+      "file": "53d5309d3adbcc4b9ad5271e10eadba480bde9d647bac1a559998f96bfce12c7.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 146873,
+      "compressedSha256": "474e08114c9a30e998069d3f0a1b8cc0bb9888656422b2e77b9c6839b34af4fa",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 159,
+      "fallbackGlyphs": 90
+    },
+    {
+      "sourceSha256": "9b66e04a9fa2346fb306b84ca458ab30eb482a6a60fc1a99af1be5ca3a2b2bfb",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere1"
+      ],
+      "sha256": "e0de96916602ff990a553bf9f53af1cd2fcd80c1d4072a5776d51f465a7b3090",
+      "file": "e0de96916602ff990a553bf9f53af1cd2fcd80c1d4072a5776d51f465a7b3090.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 338483,
+      "compressedSha256": "2ebb0ae40dd12df544f9d6a81aea785381fd7366d10f79e508d736131b469071",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 211,
+      "fallbackGlyphs": 36
+    },
+    {
+      "sourceSha256": "9bf526865a25f02d039b7169da1a8f6a329fa2ec427f6d86e2a558209ced2aa1",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_chat1"
+      ],
+      "sha256": "e28867f9ec763e3120171d791867c2f6cc7e72e8c0f3afc32022de244dd933ff",
+      "file": "e28867f9ec763e3120171d791867c2f6cc7e72e8c0f3afc32022de244dd933ff.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1968812,
+      "compressedSha256": "7a930204823721c78212f8ff294ca690b5683349635e6a76d995946720168772",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "9e342307a337b89997a9de739fb976c35a0dfbbc50871d35c629a72f0733579e",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_hm01a"
+      ],
+      "sha256": "9cef34bac70bd79722fe19a3d6ddc6df6f64ce098d5c4f354cb529d46495565c",
+      "file": "9cef34bac70bd79722fe19a3d6ddc6df6f64ce098d5c4f354cb529d46495565c.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1838956,
+      "compressedSha256": "89e10459373abcfee797bb346294b31be6917bd565b2eff771351929d6796fe7",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "9fdbee9844c36f2cdc2aa3f486198840d7d4bce4acf8f48d3e89904f026cbfd9",
+      "sourceSize": [
+        512,
+        256
+      ],
+      "size": [
+        2048,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_webbrowser"
+      ],
+      "sha256": "a70727b78c74d37ec69998df806b00790d6cc7e1b23104942f35369172d132f4",
+      "file": "a70727b78c74d37ec69998df806b00790d6cc7e1b23104942f35369172d132f4.dds.gz",
+      "bytes": 8388736,
+      "compressedBytes": 1607656,
+      "compressedSha256": "9add6078e9261da1e1808f7ee98c2c7ccb8b4d5bc1387e3a4986963de401962e",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a007ed4585398ced80c102a648867402b1ee0b3ea10227472816c27f07d19b53",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm063"
+      ],
+      "sha256": "8f2d8b89141d264161da1572438e679afcdec37b38859a54f9753e651b39aeba",
+      "file": "8f2d8b89141d264161da1572438e679afcdec37b38859a54f9753e651b39aeba.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 453647,
+      "compressedSha256": "4d8d4bc685f90bb0be5dfa571d727c50baecad70d07eda40f311a923b5af7cf8",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a25270839158d638cec588ef8de7b606b4c134e2dc2ec86c99f89a3921ab9011",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_clan2"
+      ],
+      "sha256": "71f25805c7864cb00207a6e173355a99dc15955ccbd63cf8c4093c95085f51ee",
+      "file": "71f25805c7864cb00207a6e173355a99dc15955ccbd63cf8c4093c95085f51ee.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1541967,
+      "compressedSha256": "55619f69be5fac7c3c491ad65d6bd9c47a2c1f61ea510515b9ed5a22b7992430",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a28a7a6b7c4c3a4cb9e6fc80c84a62fbcc6ba8c99425e940ab7a5256b892547a",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_gt_service"
+      ],
+      "sha256": "993fbf76f51c49b13144dbba2e31dfc62631c99cbe4379eb6787bc67151f4c39",
+      "file": "993fbf76f51c49b13144dbba2e31dfc62631c99cbe4379eb6787bc67151f4c39.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 909543,
+      "compressedSha256": "609541d2c342f7480e74dd88927ce264ed3de4d5cec0048f771c2fce95f982c5",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a352cd977100f8e569b68bca35568cb7824c38954365827bf4085a0ea60033b3",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_alchemic"
+      ],
+      "sha256": "97ba16b4b80ab28fe66960170a755344bc94de9296cc8abc8a604f2ab1d819a2",
+      "file": "97ba16b4b80ab28fe66960170a755344bc94de9296cc8abc8a604f2ab1d819a2.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1784366,
+      "compressedSha256": "62f57481b3bc15eb7ebd54f1c81f3fb71e6cab8420929c73b80849b49f72129e",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a45d8331fe3642851b37617844cd5d8ca65d3e4dfe5ee28879a385658259fab3",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_msg2"
+      ],
+      "sha256": "834306cc59363710a99805f53cb115e11d6ac1af3751b908b26b28ed6c1291a6",
+      "file": "834306cc59363710a99805f53cb115e11d6ac1af3751b908b26b28ed6c1291a6.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1626074,
+      "compressedSha256": "5838a7c11fae143aa335a73dd60c3730a9623ec7b26859cfbcd0ddb140f0d24b",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a46f7027741f807139f4a1c7e575164d636e50b08d9887bc0ad47a78ff9686a6",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_invent"
+      ],
+      "sha256": "2fe63001afa61b10ff54a83e2bf95737c290f3d5406e6b6f844d53ba7578682b",
+      "file": "2fe63001afa61b10ff54a83e2bf95737c290f3d5406e6b6f844d53ba7578682b.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1487069,
+      "compressedSha256": "2a625269e29c8579c5641d8bd6952d08acf8f6a2e610173a46e4ef35ea3fa0ac",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a4b45b18c57e56622fc3f35ce52486bb1c1c9b307339ce23439a90c105b0d9be",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_chat"
+      ],
+      "sha256": "f1b7d666ac557cf5d936db3c6bd54bedcb81d133f3c1f925ac7f2c75b245d5c7",
+      "file": "f1b7d666ac557cf5d936db3c6bd54bedcb81d133f3c1f925ac7f2c75b245d5c7.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1565812,
+      "compressedSha256": "cc9f70e24a6debd225caf210c85162b39b217fd725c09013bd179aa4deaef573",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "a83e638d0af205e1ccb502f27f7f9508ae1171f53183e37b7342dc00efe746b5",
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "size": [
+        4096,
+        4096
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "login_eng_sp"
+      ],
+      "sha256": "d93b92ae7373e74193661a6369e509110f25d84fcc223ecc2667a8753bba8a2c",
+      "file": "d93b92ae7373e74193661a6369e509110f25d84fcc223ecc2667a8753bba8a2c.dds.gz",
+      "bytes": 67108992,
+      "compressedBytes": 14478883,
+      "compressedSha256": "88a4b4bccf3ab385bd1c0560d4921ccc8cb0afbad35238ea41c664a90cd433dd",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "ae8afb0a6dc06d98dcdde421ef71c3f21b258f367affb8f2280be2d821d53f40",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere5"
+      ],
+      "sha256": "8552a76eb82fa06885c6e366e65f9dd73d0507400692d18805a3b656c2f54f24",
+      "file": "8552a76eb82fa06885c6e366e65f9dd73d0507400692d18805a3b656c2f54f24.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 209313,
+      "compressedSha256": "0ced40b2d87aaadc3336158db86823b87e18d7614b3b89d359ff8e4bdc56fd04",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 124
+    },
+    {
+      "sourceSha256": "af387c431e28a1cf881d8e5c13bdea025c4aa9c92926262848bc9529ddf37499",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pick01"
+      ],
+      "sha256": "4e50e58745404662a50b08a3e3debb2876f89520afb48cb2aefadc5e38694268",
+      "file": "4e50e58745404662a50b08a3e3debb2876f89520afb48cb2aefadc5e38694268.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1540736,
+      "compressedSha256": "13529c0de7fb132913d2033e48485f431628528e0078d1648b6b14fc6cbbb99c",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "b56b67da6cbc48a88d7e8edaf6b27c67665c91aa5344ea23ec880ba5d39db77d",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm043"
+      ],
+      "sha256": "7ab319adb97a84a1c38f1b28d4bd1521692a7d080240cdebe8788cd7bdb14116",
+      "file": "7ab319adb97a84a1c38f1b28d4bd1521692a7d080240cdebe8788cd7bdb14116.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 483949,
+      "compressedSha256": "0687f1a7a79491f64797582067cd84f365dfc290487136d8ce7b6d20f6afbabd",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "b5dfff4828ff1612cc523c3614a16c2a5c550f56adc201f1a0cdda8f5bd91fe6",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere0_i"
+      ],
+      "sha256": "7ce166eed177df4cb3b880a43536a34d6e1025f5ed0fd1be077196dba07bad31",
+      "file": "7ce166eed177df4cb3b880a43536a34d6e1025f5ed0fd1be077196dba07bad31.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 92665,
+      "compressedSha256": "285eca3961bab667ac9d43107e14f994b726869f476c5d191831499b94254369",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 159,
+      "fallbackGlyphs": 87
+    },
+    {
+      "sourceSha256": "ba4c20c20bf7bfeb1dfc58542263412d6720e3728adff1e0b3c494be616b6a87",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere10"
+      ],
+      "sha256": "95d07bc7bfca8de70e1ea0cbc07bbee23a0738a8429e3b984c53a0f3006ffde6",
+      "file": "95d07bc7bfca8de70e1ea0cbc07bbee23a0738a8429e3b984c53a0f3006ffde6.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 242510,
+      "compressedSha256": "fe933b07926ecb173859e1092bc96670f387de9f94c6f4636ddc019f2c8f89a4",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 127
+    },
+    {
+      "sourceSha256": "bb440c05e5bf1598bcfb105f51462b6c33bb226109031fb601d9a6b417b57a4e",
+      "sourceSize": [
+        256,
+        128
+      ],
+      "size": [
+        1024,
+        512
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere10_i",
+        "fnt_sphere11_i",
+        "fnt_sphere1_i",
+        "fnt_sphere2_i",
+        "fnt_sphere3_i",
+        "fnt_sphere4_i",
+        "fnt_sphere5_i",
+        "fnt_sphere6_i",
+        "fnt_sphere7_i",
+        "fnt_sphere8_i",
+        "fnt_sphere9_i"
+      ],
+      "sha256": "a82e7108a864a207a63f2d7c9e5efc0f2e121e564b8de66ccc0e8682ac5b097f",
+      "file": "a82e7108a864a207a63f2d7c9e5efc0f2e121e564b8de66ccc0e8682ac5b097f.dds.gz",
+      "bytes": 2097280,
+      "compressedBytes": 144308,
+      "compressedSha256": "ad3f54fffcde90bbc5ac3a453010d36e50bbbfcf6a90fcdf1cfb2a10061826ee",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 159,
+      "fallbackGlyphs": 83
+    },
+    {
+      "sourceSha256": "bf3dc9149ab188ad59102c622b7e3469428f41e79ade9eaeb9d16fd57f50a7f7",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm062"
+      ],
+      "sha256": "c59627de844f119f11ee2d03271101a831b42efd8eaa01773e415301f9b1757f",
+      "file": "c59627de844f119f11ee2d03271101a831b42efd8eaa01773e415301f9b1757f.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1786715,
+      "compressedSha256": "109ab998fa83251e0c1cf50879aab003b4b7469ac400f78b34ab9a0295f1c166",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c005a224970b6687d9b196a5c9f9b84d6f8108913b9e82278bcb4612561f6d34",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm031"
+      ],
+      "sha256": "7b5773d5b2ce58217a5ff799ab99e8f5a4a0510ee33c6ed09f25a1a29e97aca1",
+      "file": "7b5773d5b2ce58217a5ff799ab99e8f5a4a0510ee33c6ed09f25a1a29e97aca1.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1906171,
+      "compressedSha256": "1dfef05cb83f22b161be4fe2ad9d8b5908851cc97538ed147cc8073488a2c6a4",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c26b05da6bdc0aa7edbbaa40886d7bcfb7ceadd7ff361342537db856a547f7f5",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_cont"
+      ],
+      "sha256": "b56ff0bf1f5559f0e80d282976f5dce4bc99de156d07e13c5dddb47d3f3f2748",
+      "file": "b56ff0bf1f5559f0e80d282976f5dce4bc99de156d07e13c5dddb47d3f3f2748.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1703793,
+      "compressedSha256": "5cd2315e1f79cb768628bbbeb0de0fb2a5426bb97a029463b4cec974fd70f4e8",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c5ee472dcf60e69a907678107d26b6cf2ee3b59bca6fb1b75666edc2ff8be5bc",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere2"
+      ],
+      "sha256": "be40189dfd45c843f412bc56055138d4d9c58ba0000818b6b8398ced756b8106",
+      "file": "be40189dfd45c843f412bc56055138d4d9c58ba0000818b6b8398ced756b8106.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 214976,
+      "compressedSha256": "2160f416b20dc8084ddb92690f94ef2d69f15706e82a24598721569638ad85a1",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 94
+    },
+    {
+      "sourceSha256": "c62613360544bfe973331861c61d9b3230cdad80f54013193551105f0273fbb9",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm042"
+      ],
+      "sha256": "8107bf416dd416c938139e242c51ac90df42b70c384f4dcbd06b435d7dac9c73",
+      "file": "8107bf416dd416c938139e242c51ac90df42b70c384f4dcbd06b435d7dac9c73.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1824847,
+      "compressedSha256": "c502248816e4046de664483de04e083f64cd2b2da611b473c7e2165d71e3c24d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c7113245b543164bad155777e2768096db43181ff30b4c5eee5fa1b8edf6231c",
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "size": [
+        4096,
+        4096
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "login_rus_sp"
+      ],
+      "sha256": "6d0faa11b8558999c836608965a286c97d14252aa378df5260c15b76976398c5",
+      "file": "6d0faa11b8558999c836608965a286c97d14252aa378df5260c15b76976398c5.dds.gz",
+      "bytes": 67108992,
+      "compressedBytes": 14497034,
+      "compressedSha256": "a7befa4f00daae478e00b92882dd3390c76f822f9ae16aa845e6897c2df629d2",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c74f5b3c75798c7d525d305e5fb7219a2a98aa59e2f3b1822cbbe63bcb6d6583",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm042"
+      ],
+      "sha256": "85a8ef5cd5f04133561f1025d1a6766c7145c3fc9d6d7757c9f0a83fc510088b",
+      "file": "85a8ef5cd5f04133561f1025d1a6766c7145c3fc9d6d7757c9f0a83fc510088b.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2177180,
+      "compressedSha256": "0b66df1a525bd7326d26498987a581df8a3345b3cb0b72d0039667e879db6f96",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c7bf3847449384a79adadefcad4d137b33f1d489d0bea4611184462559a863ae",
+      "sourceSize": [
+        32,
+        32
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "sp_spec10"
+      ],
+      "sha256": "d6bd57517c611dfebba5bab0270d798cfc0be96afdc3aacaa9be192ef4f2e8c9",
+      "file": "d6bd57517c611dfebba5bab0270d798cfc0be96afdc3aacaa9be192ef4f2e8c9.dds.gz",
+      "bytes": 65664,
+      "compressedBytes": 23229,
+      "compressedSha256": "102ffeed07937a062ec7df21472c50c385107742cde15fa3773f5e45451c4b6d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "c85eb0cabca9eb96bd863ee1594e4c00af04bf8c5ea4b610369aa19fa6f97fe2",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_ctrls"
+      ],
+      "sha256": "4af50a22e74fe425ccf51ddbc220f20ba556580339665d30aeac924629323307",
+      "file": "4af50a22e74fe425ccf51ddbc220f20ba556580339665d30aeac924629323307.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 579028,
+      "compressedSha256": "e0f847baffb2a82980f2a1f7df67861d55569910d9bde40ed9ab873342024446",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "d1116d1899cfcb13fcbb6a1032ba02abcb853d395ff5c176f6769eec14e5f7d1",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm033"
+      ],
+      "sha256": "0f51502295d31833e20b23539143976bd9b3f720a7ee92dd6377739dac8a4c4d",
+      "file": "0f51502295d31833e20b23539143976bd9b3f720a7ee92dd6377739dac8a4c4d.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 480847,
+      "compressedSha256": "427c45ad7e2ae0721f6e07a6f6b823477e5a701fb8ddde7fc1bb06df23f8d660",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "d65e40872fc05a9a6f4c84d72cb1679819212a7a62d46f1b769fd4dec5611086",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_comp_c1"
+      ],
+      "sha256": "7c76c670b5f74af6a3ab369ae6e7ccd787c9e16a4b1e531225e371653f655fd3",
+      "file": "7c76c670b5f74af6a3ab369ae6e7ccd787c9e16a4b1e531225e371653f655fd3.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2196256,
+      "compressedSha256": "453e685fdafe4f753302556fa18ead9f5eef311f013d895c8ea013f0a37e595d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "d7957f693b681345839a670077c81edd436cc02b5630b8771ee378e52d2011c1",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere4"
+      ],
+      "sha256": "7b03ab2d23e07f1b94c0ceda8386fa9569c267a9f0866e353e57af2d73e60f81",
+      "file": "7b03ab2d23e07f1b94c0ceda8386fa9569c267a9f0866e353e57af2d73e60f81.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 199174,
+      "compressedSha256": "3a8c92883c2b45a848f95b3da500851c677485bdb6c8857166354d9118525aad",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 132
+    },
+    {
+      "sourceSha256": "d7b36ba6a2322520081840b8953b9483c8606eafdcf432442940120e365e0463",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_msg"
+      ],
+      "sha256": "59ce41e39060356695b16babd4770ed58cef4d265bb913dfaa1d8765cdae8fb4",
+      "file": "59ce41e39060356695b16babd4770ed58cef4d265bb913dfaa1d8765cdae8fb4.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1692015,
+      "compressedSha256": "2c070a7883b5b03fb8441e088eb0fcd8fc4d0366b7bea08fe2a2d17e3b3ff9b5",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "dc327027279127add05fb36fc7643f4043bd8705b446a13c41da4a5c01aa4b22",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm011"
+      ],
+      "sha256": "2a440d9ffe5d34375ecf51c9b0da43006cd6df69582ddf750bb48c55cef4bdf3",
+      "file": "2a440d9ffe5d34375ecf51c9b0da43006cd6df69582ddf750bb48c55cef4bdf3.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2123637,
+      "compressedSha256": "782f9bba7806e2d4b280dcc07941e4cd0f8cb58637c6be1854c326d56cb38b2a",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "dca0da989d5d26b48d780e28e815a0e49016eed1352801755fea8579c6e06e6d",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "map02"
+      ],
+      "sha256": "a9e22dba266aeb93496def4acca750258ed7d5b1ad48f492c30edb2525b5d03d",
+      "file": "a9e22dba266aeb93496def4acca750258ed7d5b1ad48f492c30edb2525b5d03d.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1995153,
+      "compressedSha256": "8e377e056e6b2ac06870062eb7aaf41fc586d7d2ff2a70da5cea85f8cf0ff898",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "de7207f928eddc78417d595226c9434c2889004270f03859f9eeab4f1fbd7c0c",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_cm021"
+      ],
+      "sha256": "b70c272c0d5244281235b356808ae25255e982b69da46cbbf873c1c3eac71141",
+      "file": "b70c272c0d5244281235b356808ae25255e982b69da46cbbf873c1c3eac71141.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1995005,
+      "compressedSha256": "fa31e06d77d982b09e76739a507b99392e491227bc09fada6981c54f702bc706",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "df278e2c888676aaea1438e43e8478b5e8b7b7d116b88b74e97fc9f857d58a5a",
+      "sourceSize": [
+        128,
+        128
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_icons02"
+      ],
+      "sha256": "14486ac0e3aeea48285e543c68c56c387bc4e61727e414132abda2aeb4b278af",
+      "file": "14486ac0e3aeea48285e543c68c56c387bc4e61727e414132abda2aeb4b278af.dds.gz",
+      "bytes": 1048704,
+      "compressedBytes": 347083,
+      "compressedSha256": "db057187b0121dd80a5919f0009188ae64e9b3a84678dda2fba8a67344c96b98",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "e3a875e91fc417cea9bda2de86b8ac5492b7d6c2f32a14bd2b8a359ca8db4f81",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere11"
+      ],
+      "sha256": "cceb547de00fabe0cbcf850d83d764e016feaee4369ed7a5e0a2bec7d4fd8bce",
+      "file": "cceb547de00fabe0cbcf850d83d764e016feaee4369ed7a5e0a2bec7d4fd8bce.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 217021,
+      "compressedSha256": "5c652af02fa8ee0851727cbbd2443f268189657138b1573f2661070c1b7929d0",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 112
+    },
+    {
+      "sourceSha256": "e3a927f6b570061f11c575e67a80eddc0a3e2cb154a3f7d3ba2f067769b3c3cb",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pup2"
+      ],
+      "sha256": "3bbd9061b6b5dacd45d7027fe76ae28079e42a911e77991833d41640cb64600d",
+      "file": "3bbd9061b6b5dacd45d7027fe76ae28079e42a911e77991833d41640cb64600d.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1237870,
+      "compressedSha256": "86333e52a73662522f046a01e9fef26f0d6b957ae5a8bba1e5d6780e9d9be63b",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "e48fe3a8782bf97f70c8be8cc8353f5ab8edca6c8e5aa1aac6c4abe763c069de",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere7"
+      ],
+      "sha256": "e79e053f2b487eeedca5e1a2d87a7f5b3cea7fe6f3a15f64b7f0de944fc3858b",
+      "file": "e79e053f2b487eeedca5e1a2d87a7f5b3cea7fe6f3a15f64b7f0de944fc3858b.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 235855,
+      "compressedSha256": "a840b1f89278a40ae0fe04fc2adf3d4ba98c90eb003d38f02d24938dd8d03415",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 138
+    },
+    {
+      "sourceSha256": "e517007bbf9555e4663bf71a0363f38e025e500493cb705509c546a95cf73a23",
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "size": [
+        4096,
+        4096
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "login_eng_s1"
+      ],
+      "sha256": "beaeb876d8c6533059cc42dcee7a5e255ee289d69574c5edaca27b3aa88c787a",
+      "file": "beaeb876d8c6533059cc42dcee7a5e255ee289d69574c5edaca27b3aa88c787a.dds.gz",
+      "bytes": 67108992,
+      "compressedBytes": 14474396,
+      "compressedSha256": "eee8091d927fbf54629b8b2c1adc32afd8c16aafecb4ed7c3d76b8bdc3755862",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "ea20512a35023f5d81e2872b8c3822778956207389c8c22c8819ba073f77d5a7",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm031"
+      ],
+      "sha256": "2003d8d12151ea14ea7a8aa7d3a4e489e096954428c43d94f0ab6d176f2750e0",
+      "file": "2003d8d12151ea14ea7a8aa7d3a4e489e096954428c43d94f0ab6d176f2750e0.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1818946,
+      "compressedSha256": "0d5293fc910249be8a336a8b6b6de362dc2f8af865c26908304087d46c7da872",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "ec44346e6ac16d4b11fef29cf296cd11073072ee3a5bc96fa536f6eb3a9d82c2",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_stat4",
+        "i_stat1"
+      ],
+      "sha256": "2a8c8757815d6c6813d3debbc0fa76f3f658c2b5db4bd59b57fba57a7cec24dd",
+      "file": "2a8c8757815d6c6813d3debbc0fa76f3f658c2b5db4bd59b57fba57a7cec24dd.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2123802,
+      "compressedSha256": "5cd118acaa4710c67926da988e201726bc95132925391d17ba5d0d058b6c9616",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "ec669225823b6a5354d0c1b5eccf5191459b0140e67b962476424e90d295995f",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_rd02"
+      ],
+      "sha256": "3e828ccc586bfc421bda08512e261b04df035a5ca25d60a0abce653d5bf5b320",
+      "file": "3e828ccc586bfc421bda08512e261b04df035a5ca25d60a0abce653d5bf5b320.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 2004931,
+      "compressedSha256": "533e7cdb497f3cc5b29bdf452cc50e5ba3759c3e540761b536d30e8ac5d71407",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "f33eef90290af0653f1724a4483624835aeec7294c8da558faf473939e61665a",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm052"
+      ],
+      "sha256": "0fde57615bf96a29b3a13798451bc89821cbebf01d04becedbb00045500c286d",
+      "file": "0fde57615bf96a29b3a13798451bc89821cbebf01d04becedbb00045500c286d.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1808175,
+      "compressedSha256": "93914f28ddd1e96692a162748d20fe80c2ca548a0169f93f6fc0a90294accfbc",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "f3cdeee365a3f744bea69b8f7252c78dba24f7996a458e25bba645928817e424",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm061"
+      ],
+      "sha256": "86e0e166d481633e42f8a76c39d061e973b6b018e40ca803f2ece1a233be84bd",
+      "file": "86e0e166d481633e42f8a76c39d061e973b6b018e40ca803f2ece1a233be84bd.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1607436,
+      "compressedSha256": "55ca70aeae24526e9a815839ac708dca69d65bc8011aa9a6eacd23e762cd6e20",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "f5142455725308e2a656ede6091c51422e1d309d12a7864f1bec87a8961901ee",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "m_sm021"
+      ],
+      "sha256": "a887298e19a5c8ea0f52d4cb85910cc8317bf235aff6c2bcb55697ce61db0c91",
+      "file": "a887298e19a5c8ea0f52d4cb85910cc8317bf235aff6c2bcb55697ce61db0c91.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1713868,
+      "compressedSha256": "5fa07868ff1f2d539da0e0843c86983ba82c2c8d4fa30ca4262fa02cc59cd50d",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "f6669fd73b30f8be2f3103fe00a344478644eedc936261f91b35d1f3e2c27830",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_pup3"
+      ],
+      "sha256": "df2a77df3a145c4ca840a7e3fc71c3a803b8ef5ad18f28f8b6e1db94de71d70e",
+      "file": "df2a77df3a145c4ca840a7e3fc71c3a803b8ef5ad18f28f8b6e1db94de71d70e.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 1508128,
+      "compressedSha256": "ebcb346a34c63614abb6145db37c68212b76157d7c976ed1efe34e0a98d1461f",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "f9d1c38fcc437a1b999b210f9560589e39ce268b039dd983b3ce06a1d5167e8e",
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "size": [
+        4096,
+        4096
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "login_rus_s1"
+      ],
+      "sha256": "3553563083c9aa922f378c003bbec306f29a4101e65b94564ff09d72269a96b1",
+      "file": "3553563083c9aa922f378c003bbec306f29a4101e65b94564ff09d72269a96b1.dds.gz",
+      "bytes": 67108992,
+      "compressedBytes": 14496009,
+      "compressedSha256": "faed1b2cf72b6c85a94f383bc2630729d61983958cb4b3ef196cfd4fcc201371",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "fb037a63d457eab5fc79f045ea70e22da86a840029f5ee1827c1eeb68be35a95",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "ui",
+      "names": [
+        "i_description"
+      ],
+      "sha256": "16d19bd55ed213b62c03d02d310b17eb0d3ad79f75c93a21fc42b773883dd187",
+      "file": "16d19bd55ed213b62c03d02d310b17eb0d3ad79f75c93a21fc42b773883dd187.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 430029,
+      "compressedSha256": "d95acfa8a277586221dad928c93aa7e7d4ecb856ef7be594ef3600e8cbf4d212",
+      "model": "realesrgan-x4plus",
+      "alpha": "original-lanczos",
+      "glyphs": 0,
+      "fallbackGlyphs": 0
+    },
+    {
+      "sourceSha256": "fb2d6d5357e550582732b7e716e3c0c0fac45186359f7ee63801c6a274bf3854",
+      "sourceSize": [
+        256,
+        256
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "scale": 4,
+      "kind": "font",
+      "names": [
+        "fnt_sphere0"
+      ],
+      "sha256": "cb0d539f1cedf9ec81b8e3e73af56759ec08467643f224fe112f70c3ec16d5b8",
+      "file": "cb0d539f1cedf9ec81b8e3e73af56759ec08467643f224fe112f70c3ec16d5b8.dds.gz",
+      "bytes": 4194432,
+      "compressedBytes": 123370,
+      "compressedSha256": "9781843ba07bfdac76993d3651d152ae65aefcdd6a003e49da82fce912438d92",
+      "model": "realesrgan-x4plus-anime",
+      "alpha": "glyph-constrained-superresolution",
+      "glyphs": 224,
+      "fallbackGlyphs": 99
+    }
+  ]
+}

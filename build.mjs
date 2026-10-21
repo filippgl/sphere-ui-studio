@@ -23,13 +23,21 @@ const files = [
   'icons-core.mjs',
   'map-recipe.mjs',
   'history-core.mjs',
+  'hd-core.mjs',
   'zip.mjs',
   'WINDOWS.md',
 ];
 await fs.mkdir(output, { recursive: true });
-const allowed = new Set([...files, 'runtime.mjs', 'version.json']);
+const hdFiles = (await fs.readdir(path.join(here, 'hd'))).filter(
+  (name) => name === 'manifest.json' || /^[a-f0-9]{64}\.dds\.gz$/.test(name),
+);
+files.push(...hdFiles.map((name) => 'hd/' + name));
+const allowed = new Set([...files, 'hd', 'runtime.mjs', 'version.json']);
 for (const name of await fs.readdir(output))
   if (!allowed.has(name)) throw Error('В dist есть посторонний файл: ' + name);
+await fs.mkdir(path.join(output, 'hd'), { recursive: true });
+for (const name of await fs.readdir(path.join(output, 'hd')))
+  if (!hdFiles.includes(name)) await fs.unlink(path.join(output, 'hd', name));
 for (const name of files) await fs.copyFile(path.join(here, name), path.join(output, name));
 let commit = 'unversioned';
 try {

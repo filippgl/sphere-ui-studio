@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { decode, parse, walk, prop, applyEdits } from './ui-model.mjs';
 import { crc32 } from './zip.mjs';
 import { readSfn } from './font-core.mjs';
+import { hdAlias } from './hd-core.mjs';
 import { spawn } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,13 @@ for (const folder of ['effects', 'xadd'])
   for (const name of await fs.readdir(path.join(original, folder)))
     if (/^fnt_sphere[01](?:_(?:d|f|i|p|spa))?\.(?:sfn|dds)$/i.test(name))
       await add(folder + '/' + name, await fs.readFile(path.join(original, folder, name)));
+const hdManifest = JSON.parse(await fs.readFile(path.join(here, 'hd/manifest.json'), 'utf8'));
+for (const scope of ['textures/fx', 'xadd', 'textures']) {
+  const names = await fs.readdir(path.join(original, scope)).catch(() => []);
+  for (const name of names.filter((name) => /^i_.*\.dds$/i.test(name)))
+    if (!payload.some((p) => p.name.toLowerCase() === (scope + '/' + name).toLowerCase()))
+      await add(scope + '/' + name, await fs.readFile(path.join(original, scope, name)));
+}
 const before = await fs.readFile(path.join(fixture, 'effects/pickpers.ui'));
 const root = walk(parse(decode(before))).find((n) => n.kind === 'windowUI'),
   field = prop(root, 'size');
@@ -43,7 +51,44 @@ const check = (value, message) => {
   assert.ok(value, message);
   checks++;
 };
+function checkSavedUi(bytes) {
+  const expectedModel = walk(parse(expected)),
+    savedModel = walk(parse(decode(bytes)));
+  const revertHd = [];
+  for (let i = 0; i < savedModel.length; i++)
+    for (let j = 0; j < savedModel[i].props.length; j++) {
+      const saved = savedModel[i].props[j],
+        target = expectedModel[i]?.props[j];
+      if (saved.key.toLowerCase() === 'texture' && saved.value.includes('studio_h4_')) {
+        const from = target.value.match(/"[^"]*"|\S+/g),
+          to = saved.value.match(/"[^"]*"|\S+/g);
+        check(
+          from.slice(5).join(' ') === to.slice(5).join(' '),
+          'HD сохраняет геометрию фрагмента',
+        );
+        check(
+          from.slice(1, 5).every((v, k) => Number(v) * 4 === Number(to[k + 1])),
+          'UV соответствуют разрешению 4×',
+        );
+        revertHd.push({ start: saved.start, end: saved.end, value: target.value });
+      }
+      if (saved.key.toLowerCase() === 'tcoords' && saved.value !== target.value) {
+        const from = target.value.trim().split(/\s+/).map(Number),
+          to = saved.value.trim().split(/\s+/).map(Number);
+        check(
+          from[0] === to[0] && from.slice(1).every((v, k) => v * 4 === to[k + 1]),
+          'Повернутые UV также соответствуют HD',
+        );
+        revertHd.push({ start: saved.start, end: saved.end, value: target.value });
+      }
+    }
+  check(
+    applyEdits(decode(bytes), revertHd) === expected,
+    'Записанный UI сохраняет кодировку и геометрию вместе с HD-ссылками',
+  );
+}
 const staticFiles = new Set(await fs.readdir(path.join(here, 'dist')));
+for (const name of await fs.readdir(path.join(here, 'dist/hd'))) staticFiles.add('hd/' + name);
 const requests = [];
 const server = http.createServer(async (req, res) => {
   requests.push({ method: req.method, path: req.url });
@@ -206,6 +251,27 @@ try {
         ),
       'Метрики букв увеличены в настоящем браузерном файле',
     );
+    const hdFont = await fileBytes('xadd/studio_f3_1500.dds'),
+      sourceFont = await fs.readFile(path.join(original, 'xadd/fnt_sphere1.dds'));
+    check(
+      hdFont.readUInt32LE(16) === sourceFont.readUInt32LE(16) * 4 &&
+        hdFont.readUInt32LE(12) === sourceFont.readUInt32LE(12) * 4,
+      'Онлайн-сохранение устанавливает растровый шрифт с разрешением 4×',
+    );
+    const hdUi = parse(decode(await fileBytes('effects/pickpers.ui')));
+    const hdNames = new Set(
+      walk(hdUi)
+        .flatMap((n) => n.props)
+        .filter((p) => p.key.toLowerCase() === 'texture')
+        .map((p) => p.value.match(/^"([^"]+)"/)?.[1])
+        .filter((n) => n?.startsWith('studio_h4_')),
+    );
+    check(hdNames.size > 0, 'Увеличенное окно ссылается на установленные HD-текстуры');
+    for (const alias of hdNames) {
+      const entry = hdManifest.entries.find((e) => hdAlias(e) === alias),
+        bytes = await fileBytes('xadd/' + alias + '.dds');
+      check(bytes.readUInt32LE(16) === entry.size[0], 'HD DDS записан рядом с клиентом');
+    }
     await page.locator('#history').click();
     await page.getByRole('button', { name: 'Восстановить', exact: true }).first().click();
     await page.waitForFunction(() => !document.getElementById('backup-dialog').open);
@@ -213,6 +279,8 @@ try {
       (await fileBytes('effects/pickpers.ui')).equals(before),
       'Откат онлайн-масштабирования восстанавливает UI',
     );
+    for (const alias of hdNames) await assert.rejects(fileBytes('xadd/' + alias + '.dds'));
+    check(true, 'Откат удаляет созданные HD DDS');
     check(
       !decode(await fileBytes('fonts.cfg')).includes('studio_f3_1500'),
       'Откат онлайн-масштабирования восстанавливает реестр шрифтов',
@@ -250,10 +318,7 @@ try {
       () => document.getElementById('dirty').textContent === 'Нет изменений',
     );
     const savedBytes = await fileBytes('effects/pickpers.ui');
-    check(
-      decode(savedBytes) === expected,
-      'Сайт записывает правку через настоящий FileSystemWritableFileStream',
-    );
+    checkSavedUi(savedBytes);
     const ids = await page.evaluate(async () => {
       const root = await (
           await navigator.storage.getDirectory()
@@ -358,9 +423,11 @@ try {
   const archivePath = path.join(fixture, 'changes.zip');
   await (await downloading).saveAs(archivePath);
   const archived = zipFiles(await fs.readFile(archivePath));
+  check(archived.has('effects/pickpers.ui'), 'ZIP содержит изменённый файл');
+  checkSavedUi(archived.get('effects/pickpers.ui'));
   check(
-    decode(archived.get('effects/pickpers.ui')) === expected,
-    'ZIP содержит изменённый файл с правильной кодировкой',
+    [...archived.keys()].some((n) => /^xadd\/studio_h4_[a-f0-9]{20}\.dds$/.test(n)),
+    'ZIP содержит HD-ресурсы окна',
   );
   const backup = [...archived.keys()].find(
     (name) => name.startsWith('_interface-editor-backups/') && name.endsWith('/pickpers.ui'),

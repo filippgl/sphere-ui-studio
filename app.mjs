@@ -387,7 +387,9 @@ function updateDirty() {
     mapScales: 'mbc\\st_map.mbc',
     iconScale: 'иконки предметов',
   };
-  const game = Object.keys(gameChanges()).map((key) => labels[key]);
+  const game = Object.keys(gameChanges())
+    .filter((key) => key !== 'hdWindows')
+    .map((key) => labels[key]);
   $('dirty').textContent =
     files.size || game.length ? `Изменено файлов: ${files.size + game.length}` : 'Нет изменений';
   $('dirty').classList.toggle('changed', !!(files.size || game.length));
@@ -547,6 +549,10 @@ function setIconScale(scale) {
 }
 function gameChanges() {
   const game = {};
+  const hdWindows = windows
+    .filter((w) => w.node.kind === 'windowUI' && changed(w.file) && windowScale(w) > 1.001)
+    .map((w) => ({ file: w.file.name, node: w.node.id }));
+  if (hdWindows.length) game.hdWindows = hdWindows;
   const chat = windows.find((w) => w.name === 'chat_st2');
   if (chat && data?.chatFonts) {
     const scale = Math.round(windowScale(chat) * 100) / 100;
@@ -2247,9 +2253,10 @@ function scaleWindow(w, factor, fromCurrent = false) {
       }
       if (p.key === 'texture') {
         const tokens = original.match(/"[^"]*"|\S+/g);
+        const image = live(p).match(/"[^"]*"|\S+/g);
         if (tokens.length >= 9)
           v = [
-            ...tokens.slice(0, 5),
+            ...image.slice(0, 5),
             ...tokens.slice(5).map((x) => Math.round(Number(x) * factor)),
           ].join(' ');
       }
@@ -2630,8 +2637,13 @@ $('save').onclick = guarded(async () => {
       })),
   }));
   $('save').disabled = true;
+  const saveLabel = $('save').lastElementChild.textContent;
+  $('save').lastElementChild.textContent = 'Сохранение…';
+  $('save').setAttribute('aria-busy', 'true');
   try {
     const game = gameChanges();
+    if (game.hdWindows?.length || fontPlans.some((p) => p.factor > 1))
+      toast('Подготавливаются HD-текстуры и резервная копия. Дождитесь завершения сохранения');
     const used = new Set(
       [game.chatFonts?.list, game.chatFonts?.edit].filter((id) =>
         fontPlans.some((p) => p.id === id),
@@ -2690,10 +2702,12 @@ $('save').onclick = guarded(async () => {
     toast(
       result.downloadOnly
         ? 'Скачан ZIP с изменениями и бэкапами. Распакуйте его в папку клиента.'
-        : `Сохранено файлов: ${result.files.length + Object.keys(game).length}. Резервная копия создана. Перезапустите игру`,
+        : `Сохранено файлов: ${result.savedFiles ?? result.files.length}. ${result.hdTextures ? `HD-текстур: ${result.hdTextures}. ` : ''}Резервная копия создана. Перезапустите игру`,
     );
     if (result.warnings?.length) toast(result.warnings.join('. '), true);
   } finally {
+    $('save').lastElementChild.textContent = saveLabel;
+    $('save').removeAttribute('aria-busy');
     updateDirty();
   }
 });

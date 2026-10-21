@@ -46,7 +46,7 @@ export function fontAlias(sourceId, factor) {
   return `studio_f${sourceId}_${Math.round(factor * 1000)}`;
 }
 
-// Generated assets are derived from the user's files; game data never ships with the editor.
+// Metrics are derived from the selected client; the HD stage may upgrade compatible atlases.
 export async function prepareFonts(requests, cfgBytes, read, list) {
   if (!Array.isArray(requests) || requests.length > 48) throw Error('Некорректный список шрифтов');
   if (!requests.length) return { assets: [], definitions: fontDefinitions(decode(cfgBytes)) };
@@ -109,6 +109,7 @@ export function validAsset(item) {
     (item.scope === 'mbc' && item.name === 'st_map.mbc') ||
     (item.scope === 'textures' && /^[\w-]+\.dds$/i.test(item.name)) ||
     (item.scope === '_interface-editor-icons' && /^[\w-]+\.(?:dds|json)$/i.test(item.name)) ||
+    (item.scope === 'xadd' && /^studio_h4_[a-f0-9]{20}\.dds$/i.test(item.name)) ||
     (['effects', 'xadd'].includes(item.scope) &&
       /^studio_f\d+_\d+(?:_(?:d|f|i|p|spa))?\.(?:sfn|dds)$/i.test(item.name) &&
       item.name.toLowerCase().endsWith(item.scope === 'effects' ? '.sfn' : '.dds'))

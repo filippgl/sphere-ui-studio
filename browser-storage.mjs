@@ -5,6 +5,7 @@ import { zip, download } from './zip.mjs';
 import { resolution } from './layout-core.mjs';
 import { fontDefinitions, prepareFonts, validAsset, backupFile, readSfn } from './font-core.mjs';
 import { currentIconScale } from './icons-core.mjs';
+import { prepareHd } from './hd-core.mjs';
 import { backupId, historyEntries, restorePlan } from './history-core.mjs';
 import {
   prepareGameAssets,
@@ -363,6 +364,27 @@ export class BrowserStorage {
           afterHash: await sha256(after),
         });
       }
+      const hd = await prepareHd({
+        changes,
+        fontAssets: generated.assets,
+        definitions: generated.definitions,
+        requests: game.hdWindows || [],
+        read: async (scope, name) => {
+          try {
+            let dir = current.handle;
+            for (const part of scope.split('/')) dir = await child(dir, part);
+            return await read(dir, name);
+          } catch (error) {
+            if (error.name === 'NotFoundError') return null;
+            throw error;
+          }
+        },
+        load: (name) => this.loadHd(name),
+      });
+      for (const change of changes) {
+        change.beforeHash = await this.digest(change.before);
+        change.afterHash = await this.digest(change.after);
+      }
       const extra = await prepareGameAssets(
         game,
         (scope, name) => this.optionalRead({ scope, name }),
@@ -384,12 +406,13 @@ export class BrowserStorage {
             : [],
         },
       );
-      for (const asset of [...generated.assets, ...extra.assets]) {
+      for (const asset of [...generated.assets, ...extra.assets, ...hd.assets]) {
         const before = await this.optionalRead(asset),
           beforeHash = await this.digest(before),
           afterHash = await this.digest(asset.after);
         if (
           ['effects', 'xadd'].includes(asset.scope) &&
+          !asset.hdUpgrade &&
           before !== null &&
           beforeHash !== afterHash
         )
@@ -449,6 +472,8 @@ export class BrowserStorage {
               : `. Исходные файлы сохранены в ${backupName}/${id}; восстановите их из резервной копии.`),
         );
       }
+      for (const url of this.imageCache.values()) URL.revokeObjectURL(await url.catch(() => ''));
+      this.imageCache.clear();
       await this.refreshFonts();
       return {
         backup: id,
@@ -460,7 +485,9 @@ export class BrowserStorage {
           await this.viewRead({ scope: 'mbc', name: mapScriptName }),
         ),
         iconScale: await currentIconScale((scope, name) => this.viewRead({ scope, name })),
-        warnings: extra.warnings,
+        warnings: [...extra.warnings, ...hd.warnings],
+        hdTextures: hd.count,
+        savedFiles: changes.length,
         downloadOnly: current.downloadOnly,
       };
     });
@@ -470,6 +497,11 @@ export class BrowserStorage {
         result.backup,
       );
     return result;
+  }
+  async loadHd(name) {
+    const response = await fetch(new URL('./hd/' + name, import.meta.url));
+    if (!response.ok) throw Error('Не удалось загрузить пакет HD-текстур');
+    return new Uint8Array(await response.arrayBuffer());
   }
   async restore(id) {
     if (!(await this.backups()).includes(id)) throw Error('Резервная копия не найдена');
